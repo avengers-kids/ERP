@@ -9,7 +9,7 @@ public class ERPController {
 	
 	@GetMapping("/test")
 	public String demo() {
-		return "Hello";
+		return "Hello Anirban";
 	}
 
 }
