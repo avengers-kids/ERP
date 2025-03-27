@@ -37,14 +37,11 @@ public class SecurityConfig {
         http
             .csrf(AbstractHttpConfigurer::disable)
             .cors(AbstractHttpConfigurer::disable)
-            .sessionManagement()
-            .sessionCreationPolicy(SessionCreationPolicy.IF_REQUIRED).and()
-            .authorizeHttpRequests(auth -> auth
-                .requestMatchers(HttpMethod.POST, "/auth/").hasAnyRole("ADMIN", "USER")
-                .anyRequest().authenticated()
-            )
-            .requestCache(cache -> cache.requestCache(new NullRequestCache()))
-            .httpBasic();
+            .authorizeRequests()
+            .antMatchers(HttpMethod.POST, "/auth/").permitAll()
+            .anyRequest().authenticated()
+            .and()
+            .sessionManagement().sessionCreationPolicy(SessionCreationPolicy.IF_REQUIRED);
 
         return http.build();
     }
