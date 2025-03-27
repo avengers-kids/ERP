@@ -7,6 +7,8 @@ import com.erp.erp.domain.dto.LoginRequest;
 import com.erp.erp.domain.dto.response.NewUserResponse;
 import com.erp.erp.domain.dto.UserSignupRequest;
 import com.erp.erp.domain.dto.response.LogInResponse;
+import lombok.RequiredArgsConstructor;
+import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.http.ResponseEntity;
 import org.springframework.web.bind.annotation.GetMapping;
 import org.springframework.web.bind.annotation.PostMapping;
@@ -16,13 +18,10 @@ import org.springframework.web.bind.annotation.RestController;
 
 @RestController
 @RequestMapping("/api/auth")
+@RequiredArgsConstructor(onConstructor = @__(@Autowired))
 public class AuthController {
 
     private final AuthService authService;
-
-    public AuthController(AuthService authService) {
-        this.authService = authService;
-    }
 
     @PostMapping("/client/signup")
     public ResponseEntity<String> clientSignUp(@RequestBody ClientSignupRequest clientSignupRequest) {
