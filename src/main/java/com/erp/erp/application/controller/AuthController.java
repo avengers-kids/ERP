@@ -1,12 +1,12 @@
 package com.erp.erp.application.controller;
 
 import com.erp.erp.application.login.AuthService;
-import com.erp.erp.domain.dto.response.APIResponse;
 import com.erp.erp.domain.dto.ClientSignupRequest;
 import com.erp.erp.domain.dto.LoginRequest;
-import com.erp.erp.domain.dto.response.NewUserResponse;
 import com.erp.erp.domain.dto.UserSignupRequest;
+import com.erp.erp.domain.dto.response.APIResponse;
 import com.erp.erp.domain.dto.response.LogInResponse;
+import com.erp.erp.domain.dto.response.NewUserResponse;
 import org.springframework.http.ResponseEntity;
 import org.springframework.web.bind.annotation.GetMapping;
 import org.springframework.web.bind.annotation.PostMapping;

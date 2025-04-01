@@ -35,15 +35,18 @@ public class SecurityConfig {
     @Bean
     public SecurityFilterChain securityFilterChain(HttpSecurity http) throws Exception {
         http
-            .csrf(AbstractHttpConfigurer::disable)
-            .cors(AbstractHttpConfigurer::disable)
+            .csrf().disable()
+            .cors().disable()
             .sessionManagement()
-            .sessionCreationPolicy(SessionCreationPolicy.IF_REQUIRED).and()
-            .authorizeHttpRequests(auth -> auth
-                .requestMatchers(HttpMethod.POST, "/auth/").hasAnyRole("ADMIN", "USER")
-                .anyRequest().authenticated()
-            )
-            .requestCache(cache -> cache.requestCache(new NullRequestCache()))
+            .sessionCreationPolicy(SessionCreationPolicy.IF_REQUIRED)
+            .and()
+            .authorizeRequests()
+            .antMatchers(HttpMethod.POST, "/auth/").hasAnyRole("ADMIN", "USER")
+            .anyRequest().authenticated()
+            .and()
+            .requestCache()
+            .requestCache(new NullRequestCache())
+            .and()
             .httpBasic();
 
         return http.build();
