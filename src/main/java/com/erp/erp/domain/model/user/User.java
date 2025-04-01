@@ -72,19 +72,16 @@ public class User {
     @Column(name = "CREATED_DATE", nullable = false)
     @JsonSerialize(using = InstantSerializer.class)
     @CreatedDate
-    @NotBlank(message = "lastUpdatedBy cannot be empty")
     private Instant creationDate;
 
 
     @Column(name = "LAST_UPDATE_DATE", nullable = false)
     @JsonSerialize(using = InstantSerializer.class)
     @LastModifiedDate
-    @NotBlank(message = "lastUpdatedBy cannot be empty")
     private Instant lastUpdateDate;
 
-    @Column(name = "VERSION", nullable = false)
+    @Column(name = "VERSION")
     @Version
-    @NotBlank(message = "lastUpdatedBy cannot be empty")
     private long version;
 
 }
