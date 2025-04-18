@@ -6,7 +6,7 @@ import org.springframework.web.bind.annotation.RestController;
 @RestController
 public class ERPController {
 	
-	@GetMapping("/test")
+	@GetMapping("/hellopoint")
 	public String demo() {
 		return "Hello";
 	}
