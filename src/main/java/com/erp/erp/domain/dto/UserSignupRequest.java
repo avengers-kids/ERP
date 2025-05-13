@@ -13,4 +13,5 @@ public class UserSignupRequest {
   private Long clientId;
   private String userPhoneNumber;
   private String userRoles;
+  private String password;
 }
