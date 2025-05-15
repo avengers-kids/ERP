@@ -87,4 +87,10 @@ public class User {
     @NotBlank(message = "lastUpdatedBy cannot be empty")
     private long version;
 
+    public void changePassword(String userEmail, String newPwd) {
+        if (this.userEmail.equals(userEmail)) {
+            this.password = newPwd;
+        }
+    }
+
 }

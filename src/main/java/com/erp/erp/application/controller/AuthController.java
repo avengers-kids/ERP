@@ -5,8 +5,8 @@ import com.erp.erp.domain.dto.ClientSignupRequest;
 import com.erp.erp.domain.dto.LoginRequest;
 import com.erp.erp.domain.dto.UserSignupRequest;
 import com.erp.erp.domain.dto.response.APIResponse;
-import com.erp.erp.domain.dto.response.NewUserResponse;
 import com.erp.erp.infrastructure.component.JwtUtil;
+import java.security.Principal;
 import java.util.List;
 import org.springframework.http.HttpStatus;
 import org.springframework.http.ResponseEntity;
@@ -16,6 +16,7 @@ import org.springframework.security.core.AuthenticationException;
 import org.springframework.security.core.GrantedAuthority;
 import org.springframework.security.core.userdetails.UserDetails;
 import org.springframework.web.bind.annotation.PostMapping;
+import org.springframework.web.bind.annotation.PutMapping;
 import org.springframework.web.bind.annotation.RequestBody;
 import org.springframework.web.bind.annotation.RequestMapping;
 import org.springframework.web.bind.annotation.RestController;
@@ -28,6 +29,8 @@ public class AuthController {
     private final AuthenticationManager authManager;
     private final JwtUtil jwtUtil;
     record AuthResponse(String token, List<String> roles) {}
+    record ChangePasswordRequest(String oldPassword, String newPassword) {}
+
 
     public AuthController(AuthService authService, AuthenticationManager authManager, JwtUtil jwtUtil) {
         this.authService = authService;
@@ -70,5 +73,12 @@ public class AuthController {
             .map(GrantedAuthority::getAuthority)
             .toList();
         return ResponseEntity.ok(new AuthResponse(token, roles));
+    }
+
+    @PutMapping("/change-password")
+    public ResponseEntity<?> changePassword(@RequestBody ChangePasswordRequest request, Principal principal) {
+        String email = principal.getName();
+        authService.changePassword(email, request.oldPassword(), request.newPassword());
+        return ResponseEntity.ok("Password changed for " + email);
     }
 }

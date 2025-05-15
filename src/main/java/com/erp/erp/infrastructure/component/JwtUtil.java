@@ -4,6 +4,7 @@ import io.jsonwebtoken.Claims;
 import io.jsonwebtoken.Jwts;
 import io.jsonwebtoken.SignatureAlgorithm;
 import io.jsonwebtoken.security.Keys;
+import jakarta.annotation.PostConstruct;
 import java.util.Date;
 import javax.crypto.SecretKey;
 import org.springframework.beans.factory.annotation.Value;
@@ -13,11 +14,13 @@ import org.springframework.stereotype.Component;
 
 @Component
 public class JwtUtil {
-  @Value("${jwt.secret}")
-  private String secret;
-
+  private SecretKey key;
   private static final long EXPIRATION_MS = 1000 * 60 * 60;
-  private final SecretKey key = Keys.secretKeyFor(SignatureAlgorithm.HS512);
+
+  @PostConstruct
+  public void init() {
+    this.key = Keys.secretKeyFor(SignatureAlgorithm.HS512);
+  }
 
   public String generateToken(UserDetails userDetails) {
     return Jwts.builder()
@@ -41,10 +44,10 @@ public class JwtUtil {
 
   private Claims parseClaims(String token) {
     return Jwts.parserBuilder()
-      .setSigningKey(Keys.hmacShaKeyFor(secret.getBytes()))
-      .build()
-      .parseClaimsJws(token)
-      .getBody();
+        .setSigningKey(key)
+        .build()
+        .parseClaimsJws(token)
+        .getBody();
   }
 
   private boolean isTokenExpired(String token) {

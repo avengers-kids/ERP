@@ -15,6 +15,7 @@ import java.util.UUID;
 import lombok.RequiredArgsConstructor;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.http.HttpStatus;
+import org.springframework.security.authentication.BadCredentialsException;
 import org.springframework.security.core.userdetails.UserDetails;
 import org.springframework.security.core.userdetails.UserDetailsService;
 import org.springframework.security.core.userdetails.UsernameNotFoundException;
@@ -118,6 +119,19 @@ public class AuthService implements UserDetailsService {
             .phoneNumber(clientSignupRequest.getClientPhoneNumber())
             .build();
         clientRepository.save(newClient);
+    }
+
+    public void changePassword(String email, String oldPwd, String newPwd) {
+        Optional<User> userOpt = userRepository.findByUserEmail(email);
+        if (userOpt.isEmpty()) {
+            throw new UsernameNotFoundException("User not found");
+        }
+
+        if (!passwordEncoder.matches(oldPwd, userOpt.get().getPassword())) {
+            throw new BadCredentialsException("Old password is incorrect");
+        }
+        userOpt.get().changePassword(email, passwordEncoder.encode(newPwd));
+        userRepository.save(userOpt.get());
     }
 
     @Override
