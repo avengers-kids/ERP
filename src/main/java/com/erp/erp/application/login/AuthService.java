@@ -4,14 +4,11 @@ import com.erp.erp.domain.dto.ClientSignupRequest;
 import com.erp.erp.domain.dto.UserSignupRequest;
 import com.erp.erp.domain.dto.response.APIResponse;
 import com.erp.erp.domain.dto.response.LogInResponse;
-import com.erp.erp.domain.dto.response.NewUserResponse;
 import com.erp.erp.domain.model.client.Client;
 import com.erp.erp.domain.model.client.ClientRepository;
 import com.erp.erp.domain.model.user.User;
 import com.erp.erp.domain.model.user.UserRepository;
-import java.time.Instant;
 import java.util.Optional;
-import java.util.UUID;
 import lombok.RequiredArgsConstructor;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.http.HttpStatus;
@@ -19,14 +16,12 @@ import org.springframework.security.authentication.BadCredentialsException;
 import org.springframework.security.core.userdetails.UserDetails;
 import org.springframework.security.core.userdetails.UserDetailsService;
 import org.springframework.security.core.userdetails.UsernameNotFoundException;
-import org.springframework.security.crypto.bcrypt.BCryptPasswordEncoder;
 import org.springframework.security.crypto.password.PasswordEncoder;
 import org.springframework.stereotype.Service;
 
 @Service
 @RequiredArgsConstructor(onConstructor = @__(@Autowired))
 public class AuthService implements UserDetailsService {
-//    private static final BCryptPasswordEncoder passwordEncoder = new BCryptPasswordEncoder();
     private static final long ONE = 1;
     private final UserRepository userRepository;
     private final ClientRepository clientRepository;
@@ -79,18 +74,13 @@ public class AuthService implements UserDetailsService {
     private User createUser(UserSignupRequest userSignupRequest) {
         String encodedPassword = passwordEncoder.encode(userSignupRequest.getPassword());
         User newUser = User.builder()
-            .userId(userSignupRequest.getUserId())
+//            .userId(userSignupRequest.getUserId())
             .userName(userSignupRequest.getUserEmail())
             .userEmail(userSignupRequest.getUserEmail())
             .password(encodedPassword)
             .clientId(userSignupRequest.getClientId())
             .userPhoneNumber(userSignupRequest.getUserPhoneNumber())
             .userRoles(userSignupRequest.getUserRoles())
-            .createdBy(userSignupRequest.getUserEmail())
-            .lastUpdatedBy(userSignupRequest.getUserEmail())
-            .creationDate(Instant.now())
-            .lastUpdateDate(Instant.now())
-            .version(ONE)
             .build();
         userRepository.save(newUser);
         return newUser;

@@ -1,10 +1,14 @@
 package com.erp.erp.domain.model.user;
 
+import com.erp.erp.domain.model.shared.AbstractEntity;
 import com.fasterxml.jackson.databind.annotation.JsonSerialize;
 import com.fasterxml.jackson.datatype.jsr310.ser.InstantSerializer;
 import jakarta.persistence.Column;
 import jakarta.persistence.Entity;
+import jakarta.persistence.GeneratedValue;
+import jakarta.persistence.GenerationType;
 import jakarta.persistence.Id;
+import jakarta.persistence.SequenceGenerator;
 import jakarta.persistence.Table;
 import jakarta.persistence.Version;
 import jakarta.validation.constraints.NotNull;
@@ -21,16 +25,23 @@ import jakarta.validation.constraints.NotBlank;
 import org.springframework.data.annotation.LastModifiedDate;
 
 @Entity
+@SequenceGenerator(
+    name = "whitelabel_global_seq",
+    sequenceName = "WHITELABEL_GLOBAL_SEQ",
+    allocationSize = 1
+)
 @Builder
 @Table(name = "WHITELABEL_USER")
 @Getter
 @NoArgsConstructor(access = AccessLevel.PROTECTED)
 @AllArgsConstructor
-public class User {
+public class User extends AbstractEntity {
 
     @Id
-//    @GeneratedValue(strategy = GenerationType.SEQUENCE, generator = "whitelabel_sequence")
-//    @SequenceGenerator(name = "whitelabel_sequence", sequenceName = "whitelabel.admin.whitelabel_sequence", schema = "admin", allocationSize = 20)
+    @GeneratedValue(
+        strategy = GenerationType.SEQUENCE,
+        generator = "whitelabel_global_seq"
+    )
     @Column(name = "USER_ID", nullable = false)
     private long userId;
 
@@ -58,35 +69,6 @@ public class User {
 
     @Column(name = "IS_DELETED", length = 1)
     private String isDeleted;
-
-    @Column(name = "CREATED_BY", nullable = false, length = 240)
-    @CreatedBy
-    @NotBlank(message = "createdBy cannot be empty")
-    private String createdBy;
-
-    @Column(name = "LAST_UPDATED_BY", nullable = false, length = 240)
-    @LastModifiedBy
-    @NotBlank(message = "lastUpdatedBy cannot be empty")
-    private String lastUpdatedBy;
-
-    @Column(name = "CREATED_DATE", nullable = false)
-    @JsonSerialize(using = InstantSerializer.class)
-    @CreatedDate
-    @NotBlank(message = "lastUpdatedBy cannot be empty")
-    private Instant creationDate;
-
-
-    @Column(name = "LAST_UPDATE_DATE", nullable = false)
-    @JsonSerialize(using = InstantSerializer.class)
-    @LastModifiedDate
-    @NotBlank(message = "lastUpdatedBy cannot be empty")
-    private Instant lastUpdateDate;
-
-    @Column(name = "VERSION", nullable = false)
-    @Version
-    @NotBlank(message = "lastUpdatedBy cannot be empty")
-    private long version;
-
     public void changePassword(String userEmail, String newPwd) {
         if (this.userEmail.equals(userEmail)) {
             this.password = newPwd;

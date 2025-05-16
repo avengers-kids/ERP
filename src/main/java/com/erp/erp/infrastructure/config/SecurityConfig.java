@@ -3,6 +3,7 @@ package com.erp.erp.infrastructure.config;
 import com.erp.erp.application.login.AuthService;
 import com.erp.erp.infrastructure.component.JwtUtil;
 import com.erp.erp.infrastructure.utility.JwtAuthenticationFilter;
+import jakarta.servlet.http.HttpServletResponse;
 import org.springframework.context.annotation.Bean;
 import org.springframework.context.annotation.Configuration;
 import org.springframework.http.HttpMethod;
@@ -43,6 +44,14 @@ public class SecurityConfig {
             .requestMatchers(HttpMethod.POST, "/api/auth/login", "/api/auth/signup").permitAll()
             .requestMatchers(HttpMethod.GET,  "/api/auth/**").permitAll()
             .anyRequest().authenticated()
+        )
+        .exceptionHandling(ex -> ex
+            .accessDeniedHandler((req, res, accessDeniedException) -> {
+              res.sendError(HttpServletResponse.SC_UNAUTHORIZED, "You do not have permission to access this resource");
+            })
+            .authenticationEntryPoint((req, res, authException) -> {
+              res.sendError(HttpServletResponse.SC_UNAUTHORIZED, "Authentication required");
+            })
         )
         .requestCache(cache -> cache.requestCache(new NullRequestCache()))
         .addFilterBefore(jwtFilter, UsernamePasswordAuthenticationFilter.class);

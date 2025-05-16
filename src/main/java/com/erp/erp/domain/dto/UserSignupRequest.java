@@ -8,7 +8,6 @@ import lombok.Setter;
 @Getter
 @Setter
 public class UserSignupRequest {
-  private Long userId;
   private String userEmail;
   private Long clientId;
   private String userPhoneNumber;
