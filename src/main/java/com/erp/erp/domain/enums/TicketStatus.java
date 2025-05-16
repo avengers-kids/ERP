@@ -7,5 +7,6 @@ public enum TicketStatus {
   QC3,
   QC4,
   LISTED,
-  SOLD
+  SOLD,
+  SCRAPED
 }

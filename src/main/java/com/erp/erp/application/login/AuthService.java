@@ -1,9 +1,9 @@
 package com.erp.erp.application.login;
 
-import com.erp.erp.domain.dto.ClientSignupRequest;
-import com.erp.erp.domain.dto.UserSignupRequest;
-import com.erp.erp.domain.dto.response.APIResponse;
-import com.erp.erp.domain.dto.response.LogInResponse;
+import com.erp.erp.application.dto.ClientSignupRequest;
+import com.erp.erp.application.dto.UserSignupRequest;
+import com.erp.erp.application.dto.response.APIResponse;
+import com.erp.erp.application.dto.response.LogInResponse;
 import com.erp.erp.domain.model.client.Client;
 import com.erp.erp.domain.model.client.ClientRepository;
 import com.erp.erp.domain.model.user.User;

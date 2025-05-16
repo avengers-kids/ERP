@@ -1,4 +1,4 @@
-package com.erp.erp.domain.dto;
+package com.erp.erp.application.dto;
 
 import lombok.Builder;
 import lombok.Getter;

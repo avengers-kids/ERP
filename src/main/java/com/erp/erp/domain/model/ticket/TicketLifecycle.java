@@ -1,17 +1,24 @@
 package com.erp.erp.domain.model.ticket;
 
+import com.erp.erp.domain.enums.TicketStatus;
 import com.erp.erp.domain.model.shared.AbstractEntity;
-import com.fasterxml.jackson.databind.annotation.JsonSerialize;
-import com.fasterxml.jackson.datatype.jsr310.ser.InstantSerializer;
-import jakarta.persistence.*;
+import jakarta.persistence.Column;
+import jakarta.persistence.Entity;
+import jakarta.persistence.EnumType;
+import jakarta.persistence.Enumerated;
+import jakarta.persistence.GeneratedValue;
+import jakarta.persistence.GenerationType;
+import jakarta.persistence.Id;
+import jakarta.persistence.SequenceGenerator;
+import jakarta.persistence.Table;
 import jakarta.validation.constraints.NotBlank;
-import lombok.*;
-import org.springframework.data.annotation.CreatedBy;
-import org.springframework.data.annotation.CreatedDate;
-import org.springframework.data.annotation.LastModifiedBy;
-import org.springframework.data.annotation.LastModifiedDate;
-
 import java.time.Instant;
+import lombok.AccessLevel;
+import lombok.AllArgsConstructor;
+import lombok.Builder;
+import lombok.Getter;
+import lombok.NoArgsConstructor;
+import lombok.Setter;
 
 @Entity
 @SequenceGenerator(
@@ -35,12 +42,14 @@ public class TicketLifecycle extends AbstractEntity {
     @Column(name = "TICKET_LC_ID", nullable = false)
     private Long ticketLcId;
 
+    @Enumerated(EnumType.STRING)
     @Column(name = "PREV_TICKET_STATUS", length = 20)
-    private String prevTicketStatus;
+    private TicketStatus prevTicketStatus;
 
+    @Enumerated(EnumType.STRING)
     @Column(name = "NEW_TICKET_STATUS", nullable = false, length = 20)
     @NotBlank
-    private String newTicketStatus;
+    private TicketStatus newTicketStatus;
 
     @Column(name = "TICKET_ID", nullable = false)
     private Long ticketId;

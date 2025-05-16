@@ -1,9 +1,8 @@
-package com.erp.erp.domain.dto;
+package com.erp.erp.application.dto;
 
 import com.erp.erp.domain.model.ticket.Ticket;
 import jakarta.validation.constraints.NotBlank;
 import jakarta.validation.constraints.NotNull;
-import java.time.Instant;
 import java.time.LocalDate;
 
 /**

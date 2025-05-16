@@ -1,10 +1,10 @@
 package com.erp.erp.application.controller;
 
 import com.erp.erp.application.login.AuthService;
-import com.erp.erp.domain.dto.ClientSignupRequest;
-import com.erp.erp.domain.dto.LoginRequest;
-import com.erp.erp.domain.dto.UserSignupRequest;
-import com.erp.erp.domain.dto.response.APIResponse;
+import com.erp.erp.application.dto.ClientSignupRequest;
+import com.erp.erp.application.dto.LoginRequest;
+import com.erp.erp.application.dto.UserSignupRequest;
+import com.erp.erp.application.dto.response.APIResponse;
 import com.erp.erp.infrastructure.component.JwtUtil;
 import java.security.Principal;
 import java.util.List;
