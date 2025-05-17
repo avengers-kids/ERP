@@ -8,4 +8,6 @@ public interface TicketService {
   Long createTicket(TicketDto ticketDto);
 
   void updateTicketStatus(Long ticketId, TicketStatus newTicketStatus);
+
+  void createBillAndMoveToSold(Long ticketId);
 }

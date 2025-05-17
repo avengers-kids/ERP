@@ -2,6 +2,8 @@ package com.erp.erp.application.ticket;
 
 import com.erp.erp.application.dto.TicketDto;
 import com.erp.erp.domain.enums.TicketStatus;
+import com.erp.erp.domain.model.ticket.SoldStatus;
+import com.erp.erp.domain.model.ticket.SoldStatusRepository;
 import com.erp.erp.domain.model.ticket.Ticket;
 import com.erp.erp.domain.model.ticket.TicketLifeCycleRepository;
 import com.erp.erp.domain.model.ticket.TicketLifecycle;
@@ -33,6 +35,7 @@ public class TicketServiceImpl implements TicketService{
   private static final String QC3_USER = "ROLE_QC3_USER";
   private static final String QC4_USER = "ROLE_QC4_USER";
   private static final String LISTED_USER = "ROLE_LISTED_USER";
+  private final SoldStatusRepository soldStatusRepository;
 
   static {
     TRANSITION_ROLE_MAP = new EnumMap<>(TicketStatus.class);
@@ -59,7 +62,6 @@ public class TicketServiceImpl implements TicketService{
         TicketStatus.SCRAPED, Set.of(QC4_USER, MANAGER))
     );
     TRANSITION_ROLE_MAP.put(TicketStatus.LISTED, Map.of(
-        TicketStatus.SOLD, Set.of(LISTED_USER, MANAGER),
         TicketStatus.SCRAPED, Set.of(LISTED_USER, MANAGER))
     );
 
@@ -100,6 +102,38 @@ public class TicketServiceImpl implements TicketService{
         .newTicketStatus(newTicketStatus)
         .build();
     ticketLifeCycleRepository.save(ticketLifecycle);
+  }
+
+  public void createBillAndMoveToSold(Long ticketId) {
+    Ticket ticket = ticketRepository.findById(ticketId)
+        .orElseThrow(() -> new IllegalArgumentException("Ticket not found : " + ticketId));
+    if (ticket.getTicketStatus() == TicketStatus.SOLD) {
+      throw new IllegalArgumentException("Product already sold : " + ticketId);
+    }
+    else if (ticket.getTicketStatus() != TicketStatus.LISTED) {
+      throw new IllegalArgumentException("Product need to be on Listed Status to be sold : " + ticketId);
+    }
+    else if (ticket.getIsDeleted().equalsIgnoreCase("Y")) {
+      throw new IllegalArgumentException("This ticket is deleted : " + ticketId);
+    }
+    else {
+      SoldStatus soldStatus = SoldStatus.builder()
+          .ticketId(ticketId)
+          .clientId(ticket.getClientId())
+          .invoiceNumber(ticket.getInvoiceNumber())
+          .invoiceDate(ticket.getInvoiceDate())
+          .phoneNumber(ticket.getPhoneNumber())
+          .customerName(ticket.getCustomerName())
+          .gstNumber(ticket.getGstNumber())
+          .gstId(ticket.getGstId())
+          .purchaseType(ticket.getProductPurchaseType())
+          .modeOfPayment(ticket.getModeOfPayment())
+          .customerAadharId(ticket.getCustomerAadharId())
+          .itemId(ticket.getItemId())
+          .isDeleted("N")
+          .build();
+      soldStatusRepository.save(soldStatus);
+    }
   }
 
   private Long createATicketForNewPurchase(TicketDto ticketDto) {

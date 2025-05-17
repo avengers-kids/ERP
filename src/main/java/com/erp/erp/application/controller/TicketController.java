@@ -1,15 +1,14 @@
 package com.erp.erp.application.controller;
 
 import com.erp.erp.application.dto.StatusUpdateRequest;
-import com.erp.erp.application.ticket.TicketService;
 import com.erp.erp.application.dto.TicketDto;
+import com.erp.erp.application.ticket.TicketService;
 import jakarta.validation.Valid;
 import org.springframework.http.HttpStatus;
 import org.springframework.http.ResponseEntity;
 import org.springframework.security.access.prepost.PreAuthorize;
 import org.springframework.web.bind.annotation.PathVariable;
 import org.springframework.web.bind.annotation.PostMapping;
-import org.springframework.web.bind.annotation.PutMapping;
 import org.springframework.web.bind.annotation.RequestBody;
 import org.springframework.web.bind.annotation.RequestMapping;
 import org.springframework.web.bind.annotation.RestController;
@@ -43,6 +42,20 @@ public class TicketController {
     }
     catch (IllegalArgumentException ex) {
       return ResponseEntity.badRequest().body(ex.getMessage());
+    }
+  }
+
+  @PostMapping("/{id}/create-bill")
+  public ResponseEntity<?> createBill(@PathVariable Long id) {
+    try {
+      ticketService.createBillAndMoveToSold(id);
+      return ResponseEntity.ok("Bill Created for Ticket " + id);
+    }
+    catch (IllegalArgumentException ex) {
+      return ResponseEntity.badRequest().body(ex.getMessage());
+    }
+    catch (Exception ex) {
+      return ResponseEntity.internalServerError().body(ex.getMessage());
     }
   }
 }
