@@ -40,8 +40,8 @@ public class PhoneDetails extends AbstractEntity {
     @Column(name = "ITEM_ID", nullable = false)
     private Long itemId;
 
-    @Column(name = "TICKET_ID", length = 50)
-    private String ticketId;
+    @Column(name = "TICKET_ID")
+    private Long ticketId;
 
     @Column(name = "NAME", length = 100)
     private String name;
