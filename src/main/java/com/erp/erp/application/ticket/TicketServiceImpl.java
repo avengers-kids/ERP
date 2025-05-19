@@ -2,6 +2,8 @@ package com.erp.erp.application.ticket;
 
 import com.erp.erp.application.dto.TicketDto;
 import com.erp.erp.domain.enums.TicketStatus;
+import com.erp.erp.domain.model.item.PhoneDetails;
+import com.erp.erp.domain.model.item.PhoneDetailsRepository;
 import com.erp.erp.domain.model.ticket.SoldStatus;
 import com.erp.erp.domain.model.ticket.SoldStatusRepository;
 import com.erp.erp.domain.model.ticket.Ticket;
@@ -36,6 +38,7 @@ public class TicketServiceImpl implements TicketService{
   private static final String QC4_USER = "ROLE_QC4_USER";
   private static final String LISTED_USER = "ROLE_LISTED_USER";
   private final SoldStatusRepository soldStatusRepository;
+  private final PhoneDetailsRepository phoneDetailsRepository;
 
   static {
     TRANSITION_ROLE_MAP = new EnumMap<>(TicketStatus.class);
@@ -153,6 +156,23 @@ public class TicketServiceImpl implements TicketService{
         .isDeleted("N")
         .build();
     ticketRepository.save(newTicket);
+    PhoneDetails phoneDetails = PhoneDetails.builder()
+        .ticketId(newTicket.getTicketId())
+        .name(ticketDto.phoneName())
+        .price(ticketDto.phonePrice())
+        .variant(ticketDto.variant())
+        .color(ticketDto.color())
+        .itemSerialNo(ticketDto.itemSerialNo())
+        .imeiNo(ticketDto.imeiNo())
+        .batteryHealth(ticketDto.batteryHealth())
+        .warranty(ticketDto.warranty())
+        .boxFlag(ticketDto.boxFlag())
+        .chargerFlag(ticketDto.chargerFlag())
+        .sealedPackFlag(ticketDto.sealedFlag())
+        .invoiceFlag(ticketDto.invoiceFlag())
+        .isDeleted("N")
+        .build();
+    phoneDetailsRepository.save(phoneDetails);
     TicketLifecycle ticketLifecycle = TicketLifecycle.builder()
         .ticketId(newTicket.getTicketId())
         .statusChangeTime(Instant.now())

@@ -3,6 +3,7 @@ package com.erp.erp.application.dto;
 import com.erp.erp.domain.model.ticket.Ticket;
 import jakarta.validation.constraints.NotBlank;
 import jakarta.validation.constraints.NotNull;
+import java.math.BigDecimal;
 import java.time.LocalDate;
 
 /**
@@ -25,27 +26,21 @@ public record TicketDto(
     @NotBlank(message = "purchaseType cannot be unspecified")
     String productPurchaseType,
     String modeOfPayment,
-    Long customerAadharId
-) {
+    Long customerAadharId,
+    String phoneName,
+    BigDecimal phonePrice,
+    String variant,
+    String color,
+    String itemSerialNo,
+    String imeiNo,
+    String batteryHealth,
+    String warranty,
+    String boxFlag,
+    String chargerFlag,
+    String sealedFlag,
+    String invoiceFlag
 
-  /**
-   * Converts a Ticket entity to its DTO representation.
-   */
-  public static TicketDto fromEntity(Ticket ticket) {
-    return new TicketDto(
-        ticket.getClientId(),
-        ticket.getItemId(),
-        ticket.getInvoiceNumber(),
-        ticket.getInvoiceDate(),
-        ticket.getPhoneNumber(),
-        ticket.getCustomerName(),
-        ticket.getGstNumber(),
-        ticket.getGstId(),
-        ticket.getProductPurchaseType(),
-        ticket.getModeOfPayment(),
-        ticket.getCustomerAadharId()
-    );
-  }
+) {
 
   @Override
   public String toString() {
