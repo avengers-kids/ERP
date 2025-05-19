@@ -13,6 +13,11 @@ import org.springframework.data.annotation.LastModifiedBy;
 import org.springframework.data.annotation.LastModifiedDate;
 
 @Entity
+@SequenceGenerator(
+    name = "whitelabel_global_seq",
+    sequenceName = "WHITELABEL_GLOBAL_SEQ",
+    allocationSize = 1
+)
 @Table(name = "WHITELABEL_CLIENT")
 @Builder
 @Getter
@@ -23,7 +28,10 @@ import org.springframework.data.annotation.LastModifiedDate;
 public class Client {
     
     @Id
-//    @GeneratedValue(strategy = GenerationType.IDENTITY)
+    @GeneratedValue(
+        strategy = GenerationType.SEQUENCE,
+        generator = "whitelabel_global_seq"
+    )
     @Column(name = "CLIENT_ID", nullable = false)
     private long clientId;
     

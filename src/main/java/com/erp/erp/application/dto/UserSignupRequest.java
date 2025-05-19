@@ -1,4 +1,4 @@
-package com.erp.erp.domain.dto;
+package com.erp.erp.application.dto;
 
 import lombok.Builder;
 import lombok.Getter;
@@ -8,9 +8,9 @@ import lombok.Setter;
 @Getter
 @Setter
 public class UserSignupRequest {
-  private Long userId;
   private String userEmail;
   private Long clientId;
   private String userPhoneNumber;
   private String userRoles;
+  private String password;
 }

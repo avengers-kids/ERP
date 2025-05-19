@@ -1,30 +1,31 @@
 package com.erp.erp.application.login;
 
-import com.erp.erp.domain.dto.response.APIResponse;
-import com.erp.erp.domain.dto.ClientSignupRequest;
-import com.erp.erp.domain.dto.response.NewUserResponse;
-import com.erp.erp.domain.dto.UserSignupRequest;
-import com.erp.erp.domain.dto.response.LogInResponse;
+import com.erp.erp.application.dto.ClientSignupRequest;
+import com.erp.erp.application.dto.UserSignupRequest;
+import com.erp.erp.application.dto.response.APIResponse;
+import com.erp.erp.application.dto.response.LogInResponse;
 import com.erp.erp.domain.model.client.Client;
 import com.erp.erp.domain.model.client.ClientRepository;
 import com.erp.erp.domain.model.user.User;
 import com.erp.erp.domain.model.user.UserRepository;
-import java.time.Instant;
 import java.util.Optional;
-import java.util.UUID;
 import lombok.RequiredArgsConstructor;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.http.HttpStatus;
-import org.springframework.security.crypto.bcrypt.BCryptPasswordEncoder;
+import org.springframework.security.authentication.BadCredentialsException;
+import org.springframework.security.core.userdetails.UserDetails;
+import org.springframework.security.core.userdetails.UserDetailsService;
+import org.springframework.security.core.userdetails.UsernameNotFoundException;
+import org.springframework.security.crypto.password.PasswordEncoder;
 import org.springframework.stereotype.Service;
 
 @Service
 @RequiredArgsConstructor(onConstructor = @__(@Autowired))
-public class AuthService {
-    private static final BCryptPasswordEncoder passwordEncoder = new BCryptPasswordEncoder();
+public class AuthService implements UserDetailsService {
     private static final long ONE = 1;
     private final UserRepository userRepository;
     private final ClientRepository clientRepository;
+    private final PasswordEncoder passwordEncoder;
 
     public LogInResponse authenticate(String userEmail, String rawPassword) {
         System.out.println(userEmail + rawPassword);
@@ -58,50 +59,31 @@ public class AuthService {
         }
     }
 
-    public NewUserResponse createNewUser(UserSignupRequest userSignupRequest) {
+    public HttpStatus createNewUser(UserSignupRequest userSignupRequest) {
         System.out.println(userSignupRequest.getUserEmail() + userSignupRequest.getUserRoles());
         Optional<User> userOpt = userRepository.findByUserEmail(userSignupRequest.getUserEmail());
         if (userOpt.isPresent()) {
-            String conflictResponse = "An account already exists with email "
-                + userSignupRequest.getUserEmail();
-            return NewUserResponse.builder()
-                .status(HttpStatus.CONFLICT)
-                .userEmail(userSignupRequest.getUserEmail())
-                .message(conflictResponse)
-                .build();
+            return HttpStatus.CONFLICT;
         }
         else {
-            String password = createUser(userSignupRequest);
-            String createdResponse = "New account created!";
-            System.out.println(password);
-            return NewUserResponse.builder()
-                .status(HttpStatus.OK)
-                .userEmail(userSignupRequest.getUserEmail())
-                .password(password)
-                .message(createdResponse)
-                .build();
+            createUser(userSignupRequest);
+            return HttpStatus.CREATED;
         }
     }
 
-    private String createUser(UserSignupRequest userSignupRequest) {
-        String randomPassword = UUID.randomUUID().toString();
-        String encodedPassword = passwordEncoder.encode(randomPassword);
+    private User createUser(UserSignupRequest userSignupRequest) {
+        String encodedPassword = passwordEncoder.encode(userSignupRequest.getPassword());
         User newUser = User.builder()
-            .userId(userSignupRequest.getUserId())
+//            .userId(userSignupRequest.getUserId())
             .userName(userSignupRequest.getUserEmail())
             .userEmail(userSignupRequest.getUserEmail())
             .password(encodedPassword)
             .clientId(userSignupRequest.getClientId())
             .userPhoneNumber(userSignupRequest.getUserPhoneNumber())
             .userRoles(userSignupRequest.getUserRoles())
-            .createdBy(userSignupRequest.getUserEmail())
-            .lastUpdatedBy(userSignupRequest.getUserEmail())
-            .creationDate(Instant.now())
-            .lastUpdateDate(Instant.now())
-            .version(ONE)
             .build();
         userRepository.save(newUser);
-        return randomPassword;
+        return newUser;
     }
 
     public APIResponse createNewClient(ClientSignupRequest clientSignupRequest) {
@@ -127,5 +109,31 @@ public class AuthService {
             .phoneNumber(clientSignupRequest.getClientPhoneNumber())
             .build();
         clientRepository.save(newClient);
+    }
+
+    public void changePassword(String email, String oldPwd, String newPwd) {
+        Optional<User> userOpt = userRepository.findByUserEmail(email);
+        if (userOpt.isEmpty()) {
+            throw new UsernameNotFoundException("User not found");
+        }
+
+        if (!passwordEncoder.matches(oldPwd, userOpt.get().getPassword())) {
+            throw new BadCredentialsException("Old password is incorrect");
+        }
+        userOpt.get().changePassword(email, passwordEncoder.encode(newPwd));
+        userRepository.save(userOpt.get());
+    }
+
+    @Override
+    public UserDetails loadUserByUsername(String username) throws UsernameNotFoundException {
+        Optional<User> userOpt = userRepository.findByUserEmail(username);
+        if (userOpt.isEmpty()) {
+            throw new UsernameNotFoundException("User not found");
+        }
+        return org.springframework.security.core.userdetails.User
+            .withUsername(userOpt.get().getUserEmail())
+            .password(userOpt.get().getPassword())
+            .authorities(userOpt.get().getUserRoles().split(","))
+            .build();
     }
 }

@@ -1,4 +1,4 @@
-package com.erp.erp.domain.dto.response;
+package com.erp.erp.application.dto.response;
 
 import lombok.Builder;
 import lombok.Getter;
