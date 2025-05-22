@@ -2,11 +2,22 @@ package com.erp.erp.domain.model.client;
 
 import com.fasterxml.jackson.databind.annotation.JsonSerialize;
 import com.fasterxml.jackson.datatype.jsr310.ser.InstantSerializer;
-import jakarta.persistence.*;
-import jakarta.validation.constraints.NotBlank;
+import jakarta.persistence.Column;
+import jakarta.persistence.Entity;
+import jakarta.persistence.GeneratedValue;
+import jakarta.persistence.GenerationType;
+import jakarta.persistence.Id;
+import jakarta.persistence.SequenceGenerator;
+import jakarta.persistence.Table;
+import jakarta.persistence.Version;
+import jakarta.validation.constraints.NotNull;
 import java.time.Instant;
-import lombok.*;
-import java.time.LocalDateTime;
+import lombok.AllArgsConstructor;
+import lombok.Builder;
+import lombok.Getter;
+import lombok.NoArgsConstructor;
+import lombok.Setter;
+import lombok.ToString;
 import org.springframework.data.annotation.CreatedBy;
 import org.springframework.data.annotation.CreatedDate;
 import org.springframework.data.annotation.LastModifiedBy;
@@ -46,12 +57,12 @@ public class Client {
 
     @Column(name = "CREATED_BY", nullable = false, length = 240)
     @CreatedBy
-    @NotBlank(message = "createdBy cannot be empty")
+    @NotNull(message = "createdBy cannot be empty")
     private String createdBy;
 
     @Column(name = "LAST_UPDATED_BY", nullable = false, length = 240)
     @LastModifiedBy
-    @NotBlank(message = "lastUpdatedBy cannot be empty")
+    @NotNull(message = "lastUpdatedBy cannot be empty")
     private String lastUpdatedBy;
 
     @Column(name = "CREATED_DATE", nullable = false)

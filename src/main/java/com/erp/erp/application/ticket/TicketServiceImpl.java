@@ -158,6 +158,7 @@ public class TicketServiceImpl implements TicketService{
     ticketRepository.save(newTicket);
     PhoneDetails phoneDetails = PhoneDetails.builder()
         .ticketId(newTicket.getTicketId())
+        .itemId(newTicket.getItemId())
         .name(ticketDto.phoneName())
         .price(ticketDto.phonePrice())
         .variant(ticketDto.variant())

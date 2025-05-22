@@ -11,7 +11,7 @@ import jakarta.persistence.GenerationType;
 import jakarta.persistence.Id;
 import jakarta.persistence.SequenceGenerator;
 import jakarta.persistence.Table;
-import jakarta.validation.constraints.NotBlank;
+import jakarta.validation.constraints.NotNull;
 import java.time.Instant;
 import lombok.AccessLevel;
 import lombok.AllArgsConstructor;
@@ -48,7 +48,7 @@ public class TicketLifecycle extends AbstractEntity {
 
     @Enumerated(EnumType.STRING)
     @Column(name = "NEW_TICKET_STATUS", nullable = false, length = 20)
-    @NotBlank
+    @NotNull
     private TicketStatus newTicketStatus;
 
     @Column(name = "TICKET_ID", nullable = false)

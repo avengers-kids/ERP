@@ -46,11 +46,11 @@ public class User extends AbstractEntity {
     private long userId;
 
     @Column(name = "USER_NAME", nullable = false, length = 100)
-    @NotBlank(message = "User name cannot be empty")
+    @NotNull(message = "User name cannot be empty")
     private String userName;
 
     @Column(name = "PASSWORD", nullable = false, length = 1000)
-    @NotBlank(message = "password cannot be empty")
+    @NotNull(message = "password cannot be empty")
     private String password;
 
     @Column(name = "CLIENT_ID", nullable = false)
@@ -58,7 +58,7 @@ public class User extends AbstractEntity {
     private Long clientId;
 
     @Column(name = "USER_EMAIL", nullable = false, length = 255)
-    @NotBlank(message = "userEmail cannot be empty")
+    @NotNull(message = "userEmail cannot be empty")
     private String userEmail;
 
     @Column(name = "USER_PHONE_NUMBER", length = 20)
