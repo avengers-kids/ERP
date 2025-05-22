@@ -25,10 +25,10 @@ public class TicketController {
   }
 
   @PostMapping("/create-ticket")
-  @PreAuthorize("hasAnyRole('USER','ADMIN')")
+  @PreAuthorize("hasAnyRole('USER','ADMIN','MANAGER')")
   public ResponseEntity<?> newPurchaseTicket(@RequestBody TicketDto ticketDto) {
-    ticketService.createTicket(ticketDto);
-    return ResponseEntity.status(HttpStatus.CREATED).body("New Ticket has been created.");
+    Long newTicketId = ticketService.createTicket(ticketDto);
+    return ResponseEntity.status(HttpStatus.CREATED).body("New Ticket has been created with ID : " + newTicketId);
   }
 
   @PostMapping("/{id}/status")

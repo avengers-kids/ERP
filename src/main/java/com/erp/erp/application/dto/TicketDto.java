@@ -19,11 +19,11 @@ public record TicketDto(
     @NotNull(message = "invoiceDate cannot be unspecified")
     LocalDate invoiceDate,
     String phoneNumber,
-    @NotBlank(message = "customerName cannot be unspecified")
+    @NotNull(message = "customerName cannot be unspecified")
     String customerName,
     String gstNumber,
     String gstId,
-    @NotBlank(message = "purchaseType cannot be unspecified")
+    @NotNull(message = "purchaseType cannot be unspecified")
     String productPurchaseType,
     String modeOfPayment,
     Long customerAadharId,

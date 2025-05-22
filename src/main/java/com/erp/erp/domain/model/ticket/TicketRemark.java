@@ -1,17 +1,21 @@
 package com.erp.erp.domain.model.ticket;
 
 import com.erp.erp.domain.model.shared.AbstractEntity;
-import com.fasterxml.jackson.databind.annotation.JsonSerialize;
-import com.fasterxml.jackson.datatype.jsr310.ser.InstantSerializer;
-import jakarta.persistence.*;
-import jakarta.validation.constraints.NotBlank;
-import lombok.*;
-import org.springframework.data.annotation.CreatedBy;
-import org.springframework.data.annotation.CreatedDate;
-import org.springframework.data.annotation.LastModifiedBy;
-import org.springframework.data.annotation.LastModifiedDate;
-
+import jakarta.persistence.Column;
+import jakarta.persistence.Entity;
+import jakarta.persistence.GeneratedValue;
+import jakarta.persistence.GenerationType;
+import jakarta.persistence.Id;
+import jakarta.persistence.SequenceGenerator;
+import jakarta.persistence.Table;
+import jakarta.validation.constraints.NotNull;
 import java.time.Instant;
+import lombok.AccessLevel;
+import lombok.AllArgsConstructor;
+import lombok.Builder;
+import lombok.Getter;
+import lombok.NoArgsConstructor;
+import lombok.Setter;
 
 @Entity
 @SequenceGenerator(
@@ -42,7 +46,7 @@ public class TicketRemark extends AbstractEntity {
     private Long ticketId;
 
     @Column(name = "TICKET_STATUS", nullable = false, length = 20)
-    @NotBlank
+    @NotNull
     private String ticketStatus;
 
     @Column(name = "TICKET_REMARK", length = 500)
