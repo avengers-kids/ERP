@@ -42,7 +42,6 @@ public class AuthController {
 
     @PostMapping("/client/signup")
     public ResponseEntity<String> clientSignUp(@RequestBody ClientSignupRequest clientSignupRequest) {
-        System.out.println(clientSignupRequest);
         APIResponse clientSignupResponse = authService.createNewClient(clientSignupRequest);
         return ResponseEntity.status(clientSignupResponse.getStatus()).body(clientSignupResponse.getResponse());
     }
@@ -50,8 +49,8 @@ public class AuthController {
     public ResponseEntity<?> userSignUp(@RequestBody UserSignupRequest userSignupRequest) {
         System.out.println(userSignupRequest.getUserRoles() + userSignupRequest.getUserPhoneNumber());
         HttpStatus status = authService.createNewUser(userSignupRequest);
-        if (status == HttpStatus.CONFLICT) {
-            return ResponseEntity.status(status).body("Account already exists.");
+        if (status != HttpStatus.CREATED) {
+            return ResponseEntity.status(status).body("Email is invalid or account already exists!");
         }
         return ResponseEntity.status(status).body("Account created.");
     }

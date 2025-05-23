@@ -4,6 +4,7 @@ import com.erp.erp.application.dto.StatusUpdateRequest;
 import com.erp.erp.application.dto.TicketDto;
 import com.erp.erp.application.ticket.TicketService;
 import jakarta.validation.Valid;
+import java.security.Principal;
 import org.springframework.http.HttpStatus;
 import org.springframework.http.ResponseEntity;
 import org.springframework.security.access.prepost.PreAuthorize;
@@ -26,8 +27,9 @@ public class TicketController {
 
   @PostMapping("/create-ticket")
   @PreAuthorize("hasAnyRole('USER','ADMIN','MANAGER')")
-  public ResponseEntity<?> newPurchaseTicket(@RequestBody TicketDto ticketDto) {
-    Long newTicketId = ticketService.createTicket(ticketDto);
+  public ResponseEntity<?> newPurchaseTicket(@RequestBody TicketDto ticketDto, Principal principal) {
+    String email = principal.getName();
+    Long newTicketId = ticketService.createTicket(ticketDto, email);
     return ResponseEntity.status(HttpStatus.CREATED).body("New Ticket has been created with ID : " + newTicketId);
   }
 

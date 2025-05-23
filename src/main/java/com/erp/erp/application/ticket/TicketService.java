@@ -5,7 +5,7 @@ import com.erp.erp.domain.enums.TicketStatus;
 
 public interface TicketService {
 
-  Long createTicket(TicketDto ticketDto);
+  Long createTicket(TicketDto ticketDto, String email);
 
   void updateTicketStatus(Long ticketId, TicketStatus newTicketStatus);
 

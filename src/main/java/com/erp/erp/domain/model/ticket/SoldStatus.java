@@ -10,11 +10,6 @@ import lombok.*;
  * JPA entity mapping for the WHITELABEL_SOLD_STATUS_TABLE.
  */
 @Entity
-@SequenceGenerator(
-    name = "whitelabel_global_seq",
-    sequenceName = "WHITELABEL_GLOBAL_SEQ",
-    allocationSize = 1
-)
 @Table(name = "WHITELABEL_SOLD_STATUS_TABLE")
 @Getter
 @Setter
@@ -24,9 +19,15 @@ import lombok.*;
 public class SoldStatus extends AbstractEntity {
 
     @Id
-    @GeneratedValue(
-        strategy = GenerationType.SEQUENCE,
-        generator = "whitelabel_global_seq"
+    @GeneratedValue(strategy = GenerationType.TABLE, generator = "ticketSeqGen")
+    @TableGenerator(
+        name           = "ticketSeqGen",
+        table          = "global_sequence",
+        pkColumnName   = "seq_name",
+        valueColumnName= "next_val",
+        pkColumnValue  = "ticket_seq",
+        initialValue   = 100000,
+        allocationSize = 1
     )
     @Column(name = "SOLD_TABLE_ID", nullable = false)
     private Long soldTableId;

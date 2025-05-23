@@ -10,9 +10,12 @@ import com.erp.erp.domain.model.ticket.Ticket;
 import com.erp.erp.domain.model.ticket.TicketLifeCycleRepository;
 import com.erp.erp.domain.model.ticket.TicketLifecycle;
 import com.erp.erp.domain.model.ticket.TicketRepository;
+import com.erp.erp.domain.model.user.User;
+import com.erp.erp.domain.model.user.UserRepository;
 import java.time.Instant;
 import java.util.EnumMap;
 import java.util.Map;
+import java.util.Optional;
 import java.util.Set;
 import lombok.RequiredArgsConstructor;
 import org.springframework.beans.factory.annotation.Autowired;
@@ -20,6 +23,7 @@ import org.springframework.security.access.AccessDeniedException;
 import org.springframework.security.core.Authentication;
 import org.springframework.security.core.GrantedAuthority;
 import org.springframework.security.core.context.SecurityContextHolder;
+import org.springframework.security.core.userdetails.UsernameNotFoundException;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
 
@@ -39,6 +43,7 @@ public class TicketServiceImpl implements TicketService{
   private static final String LISTED_USER = "ROLE_LISTED_USER";
   private final SoldStatusRepository soldStatusRepository;
   private final PhoneDetailsRepository phoneDetailsRepository;
+  private final UserRepository userRepository;
 
   static {
     TRANSITION_ROLE_MAP = new EnumMap<>(TicketStatus.class);
@@ -70,8 +75,8 @@ public class TicketServiceImpl implements TicketService{
 
   }
 
-  public Long createTicket(TicketDto ticketDto) {
-    return createATicketForNewPurchase(ticketDto);
+  public Long createTicket(TicketDto ticketDto, String email) {
+    return createATicketForNewPurchase(ticketDto, email);
   }
 
   @Override
@@ -139,9 +144,13 @@ public class TicketServiceImpl implements TicketService{
     }
   }
 
-  private Long createATicketForNewPurchase(TicketDto ticketDto) {
+  private Long createATicketForNewPurchase(TicketDto ticketDto, String email) {
+    Optional<User> user = userRepository.findByUserEmail(email);
+    if (user.isEmpty()) {
+      throw new UsernameNotFoundException("No user found for user " + email);
+    }
     Ticket newTicket = Ticket.builder()
-        .clientId(ticketDto.clientId())
+        .clientId(user.get().getClientId())
         .ticketStatus(TicketStatus.PURCHASED)
         .invoiceNumber(ticketDto.invoiceNumber())
         .invoiceDate(ticketDto.invoiceDate())

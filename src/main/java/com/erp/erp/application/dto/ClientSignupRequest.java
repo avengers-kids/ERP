@@ -8,7 +8,6 @@ import lombok.Setter;
 @Getter
 @Setter
 public class ClientSignupRequest {
-  private Long clientId;
   private String clientName;
   private String clientEmail;
   private String clientPhoneNumber;
