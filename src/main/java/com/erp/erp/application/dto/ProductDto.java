@@ -8,7 +8,7 @@ import jakarta.validation.constraints.NotNull;
 public record ProductDto(
 
     @NotNull(message = "product ID cannot be unspecified")
-    Long productId,
+    Long productMasterId,
     @NotNull(message = "product name cannot be unspecified")
     String productName,
 //    @NotNull(message = "product description cannot be unspecified")
@@ -19,7 +19,7 @@ public record ProductDto(
   @Override
   public String toString() {
     return "ProductDto{" +
-        "productId=" + productId +
+        "productId=" + productMasterId +
         " productName=" + productName +
         ", productDescription=" + productDescription +
         '}';
