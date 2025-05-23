@@ -8,6 +8,7 @@ import jakarta.persistence.GenerationType;
 import jakarta.persistence.Id;
 import jakarta.persistence.SequenceGenerator;
 import jakarta.persistence.Table;
+import jakarta.persistence.TableGenerator;
 import jakarta.validation.constraints.NotNull;
 import java.time.Instant;
 import lombok.AccessLevel;
@@ -18,11 +19,6 @@ import lombok.NoArgsConstructor;
 import lombok.Setter;
 
 @Entity
-@SequenceGenerator(
-    name = "whitelabel_global_seq",
-    sequenceName = "WHITELABEL_GLOBAL_SEQ",
-    allocationSize = 1
-)
 @Table(name = "WHITELABEL_TICKET_REMARK")
 @Getter
 @Setter
@@ -32,9 +28,15 @@ import lombok.Setter;
 public class TicketRemark extends AbstractEntity {
 
     @Id
-    @GeneratedValue(
-        strategy = GenerationType.SEQUENCE,
-        generator = "whitelabel_global_seq"
+    @GeneratedValue(strategy = GenerationType.TABLE, generator = "ticketSeqGen")
+    @TableGenerator(
+        name           = "ticketSeqGen",
+        table          = "global_sequence",
+        pkColumnName   = "seq_name",
+        valueColumnName= "next_val",
+        pkColumnValue  = "ticket_seq",
+        initialValue   = 100000,
+        allocationSize = 1
     )
     @Column(name = "TICKET_REMARK_ID", nullable = false)
     private Long ticketRemarkId;

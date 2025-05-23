@@ -1,35 +1,21 @@
 package com.erp.erp.domain.model.user;
 
 import com.erp.erp.domain.model.shared.AbstractEntity;
-import com.fasterxml.jackson.databind.annotation.JsonSerialize;
-import com.fasterxml.jackson.datatype.jsr310.ser.InstantSerializer;
 import jakarta.persistence.Column;
 import jakarta.persistence.Entity;
 import jakarta.persistence.GeneratedValue;
 import jakarta.persistence.GenerationType;
 import jakarta.persistence.Id;
-import jakarta.persistence.SequenceGenerator;
 import jakarta.persistence.Table;
-import jakarta.persistence.Version;
+import jakarta.persistence.TableGenerator;
 import jakarta.validation.constraints.NotNull;
-import java.time.Instant;
 import lombok.AccessLevel;
 import lombok.AllArgsConstructor;
 import lombok.Builder;
 import lombok.Getter;
 import lombok.NoArgsConstructor;
-import org.springframework.data.annotation.CreatedBy;
-import org.springframework.data.annotation.CreatedDate;
-import org.springframework.data.annotation.LastModifiedBy;
-import jakarta.validation.constraints.NotBlank;
-import org.springframework.data.annotation.LastModifiedDate;
 
 @Entity
-@SequenceGenerator(
-    name = "whitelabel_global_seq",
-    sequenceName = "WHITELABEL_GLOBAL_SEQ",
-    allocationSize = 1
-)
 @Builder
 @Table(name = "WHITELABEL_USER")
 @Getter
@@ -38,9 +24,15 @@ import org.springframework.data.annotation.LastModifiedDate;
 public class User extends AbstractEntity {
 
     @Id
-    @GeneratedValue(
-        strategy = GenerationType.SEQUENCE,
-        generator = "whitelabel_global_seq"
+    @GeneratedValue(strategy = GenerationType.TABLE, generator = "ticketSeqGen")
+    @TableGenerator(
+        name           = "ticketSeqGen",
+        table          = "global_sequence",
+        pkColumnName   = "seq_name",
+        valueColumnName= "next_val",
+        pkColumnValue  = "ticket_seq",
+        initialValue   = 100000,
+        allocationSize = 1
     )
     @Column(name = "USER_ID", nullable = false)
     private long userId;

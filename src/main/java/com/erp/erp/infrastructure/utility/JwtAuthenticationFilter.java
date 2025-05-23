@@ -34,6 +34,9 @@ public class JwtAuthenticationFilter extends OncePerRequestFilter {
     if (path.startsWith(request.getContextPath() + "/api/auth/signup")) {
       return true;
     }
+    if (path.startsWith(request.getContextPath() + "/api/auth/client/signup")) {
+      return true;
+    }
     if (path.equals(request.getContextPath() + "/error")) {
       return true;
     }
