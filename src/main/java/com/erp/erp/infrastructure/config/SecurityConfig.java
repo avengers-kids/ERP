@@ -1,6 +1,7 @@
 package com.erp.erp.infrastructure.config;
 
 import com.erp.erp.application.login.AuthService;
+import com.erp.erp.application.login.UserTokenService;
 import com.erp.erp.infrastructure.component.JwtUtil;
 import com.erp.erp.infrastructure.utility.JwtAuthenticationFilter;
 import jakarta.servlet.http.HttpServletResponse;
@@ -33,8 +34,8 @@ public class SecurityConfig {
   }
 
   @Bean
-  public SecurityFilterChain filterChain(HttpSecurity http, AuthService uds) throws Exception {
-    JwtAuthenticationFilter jwtFilter = new JwtAuthenticationFilter(jwtUtil, uds);
+  public SecurityFilterChain filterChain(HttpSecurity http, AuthService uds, UserTokenService utds) throws Exception {
+    JwtAuthenticationFilter jwtFilter = new JwtAuthenticationFilter(jwtUtil, uds, utds);
 
     http
         .csrf(AbstractHttpConfigurer::disable)
