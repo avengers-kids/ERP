@@ -12,4 +12,5 @@ public class LogInResponse {
   private HttpStatus status;
   private String userEmail;
   private String message;
+  private String accessToken;
 }

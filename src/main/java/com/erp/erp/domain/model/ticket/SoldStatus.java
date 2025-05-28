@@ -38,8 +38,8 @@ public class SoldStatus extends AbstractEntity {
     @Column(name = "CLIENT_ID", nullable = false)
     private Long clientId;
 
-    @Column(name = "INVOICE_NUMBER", nullable = false)
-    private Long invoiceNumber;
+    @Column(name = "INVOICE_NUMBER", length = 300, nullable = false)
+    private String invoiceNumber;
 
     @Column(name = "INVOICE_DATE", nullable = false)
     private LocalDate invoiceDate;

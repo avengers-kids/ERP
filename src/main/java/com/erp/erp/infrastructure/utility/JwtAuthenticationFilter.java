@@ -1,12 +1,12 @@
 package com.erp.erp.infrastructure.utility;
 
+import com.erp.erp.application.login.UserTokenService;
 import com.erp.erp.infrastructure.component.JwtUtil;
 import jakarta.servlet.FilterChain;
 import jakarta.servlet.ServletException;
 import jakarta.servlet.http.HttpServletRequest;
 import jakarta.servlet.http.HttpServletResponse;
 import java.io.IOException;
-import java.util.List;
 import org.springframework.security.authentication.UsernamePasswordAuthenticationToken;
 import org.springframework.security.core.context.SecurityContextHolder;
 import org.springframework.security.core.userdetails.UserDetails;
@@ -18,10 +18,15 @@ import org.springframework.web.filter.OncePerRequestFilter;
 public class JwtAuthenticationFilter extends OncePerRequestFilter {
   private final JwtUtil jwtUtil;
   private final UserDetailsService userDetailsService;
+  private final UserTokenService userTokenService;
 
-  public JwtAuthenticationFilter(JwtUtil jwtUtil, UserDetailsService uds) {
+  public JwtAuthenticationFilter(
+      JwtUtil jwtUtil,
+      UserDetailsService uds,
+      UserTokenService userTokenService) {
     this.jwtUtil = jwtUtil;
     this.userDetailsService = uds;
+    this.userTokenService = userTokenService;
   }
 
   @Override
@@ -52,9 +57,11 @@ public class JwtAuthenticationFilter extends OncePerRequestFilter {
     return false;
   }
 
-
   @Override
-  protected void doFilterInternal(HttpServletRequest req, HttpServletResponse res, FilterChain chain)
+  protected void doFilterInternal(
+      HttpServletRequest req,
+      HttpServletResponse res,
+      FilterChain chain)
       throws ServletException, IOException {
     String authHeader = req.getHeader("Authorization");
     if (authHeader != null && authHeader.startsWith("Bearer ")) {
@@ -63,11 +70,19 @@ public class JwtAuthenticationFilter extends OncePerRequestFilter {
       if (username != null && SecurityContextHolder.getContext().getAuthentication() == null) {
         UserDetails userDetails = userDetailsService.loadUserByUsername(username);
         if (jwtUtil.validateToken(token, userDetails)) {
-          UsernamePasswordAuthenticationToken authToken =
-            new UsernamePasswordAuthenticationToken(
-              userDetails, null, userDetails.getAuthorities());
-          authToken.setDetails(new WebAuthenticationDetailsSource().buildDetails(req));
-          SecurityContextHolder.getContext().setAuthentication(authToken);
+          // Check token is still active (not revoked or expired in DB)
+          String jti = jwtUtil.extractJti(token);
+          if (userTokenService.isTokenActive(username, jti)) {
+            UsernamePasswordAuthenticationToken authToken =
+                new UsernamePasswordAuthenticationToken(
+                    userDetails, null, userDetails.getAuthorities());
+            authToken.setDetails(new WebAuthenticationDetailsSource().buildDetails(req));
+            SecurityContextHolder.getContext().setAuthentication(authToken);
+          } else {
+            // token revoked or expired -> reject request
+            res.setStatus(HttpServletResponse.SC_UNAUTHORIZED);
+            return;
+          }
         }
       }
     }

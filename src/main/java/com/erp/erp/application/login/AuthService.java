@@ -8,6 +8,8 @@ import com.erp.erp.domain.model.client.Client;
 import com.erp.erp.domain.model.client.ClientRepository;
 import com.erp.erp.domain.model.user.User;
 import com.erp.erp.domain.model.user.UserRepository;
+import com.erp.erp.infrastructure.component.JwtUtil;
+import java.util.Date;
 import java.util.Optional;
 import lombok.RequiredArgsConstructor;
 import org.springframework.beans.factory.annotation.Autowired;
@@ -27,39 +29,10 @@ public class AuthService implements UserDetailsService {
   private final UserRepository userRepository;
   private final ClientRepository clientRepository;
   private final PasswordEncoder passwordEncoder;
-
-  public LogInResponse authenticate(String userEmail, String rawPassword) {
-    System.out.println(userEmail + rawPassword);
-    Optional<User> userOpt = userRepository.findByUserEmail(userEmail);
-    if (userOpt.isPresent()) {
-      if (passwordEncoder.matches(rawPassword, userOpt.get().getPassword())) {
-        String createdResponse = "Logged in successfully";
-        return LogInResponse.builder()
-            .status(HttpStatus.OK)
-            .userEmail(userEmail)
-            .message(createdResponse)
-            .build();
-      } else {
-        String authFailResponse = "Password is case sensitive";
-        return LogInResponse.builder()
-            .status(HttpStatus.UNAUTHORIZED)
-            .userEmail(userEmail)
-            .message(authFailResponse)
-            .build();
-      }
-
-    } else {
-      String authFailResponse = "No account exists with your email!";
-      return LogInResponse.builder()
-          .status(HttpStatus.UNAUTHORIZED)
-          .userEmail(userEmail)
-          .message(authFailResponse)
-          .build();
-    }
-  }
+  private final JwtUtil jwtUtil;
+  private final UserTokenService userTokenService;
 
   public HttpStatus createNewUser(UserSignupRequest userSignupRequest) {
-    System.out.println(userSignupRequest.getUserEmail() + userSignupRequest.getUserRoles());
     Optional<User> userOpt = userRepository.findByUserEmail(userSignupRequest.getUserEmail());
     if (userOpt.isPresent()) {
       return HttpStatus.CONFLICT;
@@ -74,7 +47,6 @@ public class AuthService implements UserDetailsService {
   private User createUser(UserSignupRequest userSignupRequest) {
     String encodedPassword = passwordEncoder.encode(userSignupRequest.getPassword());
     User newUser = User.builder()
-//            .userId(userSignupRequest.getUserId())
         .userName(userSignupRequest.getUserEmail())
         .userEmail(userSignupRequest.getUserEmail())
         .password(encodedPassword)
@@ -124,16 +96,71 @@ public class AuthService implements UserDetailsService {
     userRepository.save(userOpt.get());
   }
 
+  /**
+   * Authenticate credentials, issue a JWT, persist its JTI, and return it.
+   */
+  public LogInResponse authenticate(String userEmail, String rawPassword) {
+    User user = userRepository.findByUserEmail(userEmail)
+        .orElseThrow(() -> new BadCredentialsException("No account exists with your email!"));
+
+    if (!passwordEncoder.matches(rawPassword, user.getPassword())) {
+      throw new BadCredentialsException("Invalid password");
+    }
+
+    // 1) Load Spring Security UserDetails
+    UserDetails userDetails = loadUserByUsername(userEmail);
+
+    // 2) Generate token
+    String token = jwtUtil.generateToken(userDetails);
+
+    // 3) Persist the JTI & timestamps (revoking any prior token for this user)
+    String jti       = jwtUtil.extractJti(token);
+    Date issuedAt    = jwtUtil.extractIssuedAt(token);
+    Date expiresAt   = jwtUtil.extractExpiration(token);
+    userTokenService.saveToken(userEmail, jti, issuedAt, expiresAt);
+
+    // 4) Return the token in your response DTO
+    return LogInResponse.builder()
+        .status(HttpStatus.OK)
+        .userEmail(userEmail)
+        .accessToken(token)
+        .message("Logged in successfully")
+        .build();
+  }
+
+  /**
+   * Refresh an existing but unexpired token:
+   *  - revoke the old JTI
+   *  - issue & persist a fresh token
+   */
+  public String refreshToken(String oldToken) {
+    String username = jwtUtil.extractUsername(oldToken);
+    String oldJti   = jwtUtil.extractJti(oldToken);
+
+    // Revoke the old token
+    userTokenService.revokeToken(username, oldJti);
+
+    // Issue a fresh JWT
+    UserDetails userDetails = loadUserByUsername(username);
+    String newToken = jwtUtil.generateToken(userDetails);
+
+    // Persist its JTI & timestamps
+    String newJti     = jwtUtil.extractJti(newToken);
+    Date newIssuedAt  = jwtUtil.extractIssuedAt(newToken);
+    Date newExpiresAt = jwtUtil.extractExpiration(newToken);
+    userTokenService.saveToken(username, newJti, newIssuedAt, newExpiresAt);
+
+    return newToken;
+  }
+
   @Override
   public UserDetails loadUserByUsername(String username) throws UsernameNotFoundException {
-    Optional<User> userOpt = userRepository.findByUserEmail(username);
-    if (userOpt.isEmpty()) {
-      throw new UsernameNotFoundException("User not found");
-    }
+    User user = userRepository.findByUserEmail(username)
+        .orElseThrow(() -> new UsernameNotFoundException("User not found"));
     return org.springframework.security.core.userdetails.User
-        .withUsername(userOpt.get().getUserEmail())
-        .password(userOpt.get().getPassword())
-        .authorities(userOpt.get().getUserRoles().split(","))
+        .withUsername(user.getUserEmail())
+        .password(user.getPassword())
+        .authorities(user.getUserRoles().split(","))
         .build();
   }
 }

@@ -162,27 +162,12 @@ public class TicketServiceImpl implements TicketService{
         .modeOfPayment(ticketDto.modeOfPayment())
         .customerAadharId(ticketDto.customerAadharId())
         .itemId(ticketDto.itemId())
+        .acquisitionCost(ticketDto.acquisitionCost())
+        .refurbishedCost(ticketDto.refurbishedCost())
         .isDeleted("N")
         .build();
     ticketRepository.save(newTicket);
-    PhoneDetails phoneDetails = PhoneDetails.builder()
-        .ticketId(newTicket.getTicketId())
-        .itemId(newTicket.getItemId())
-        .name(ticketDto.phoneName())
-        .price(ticketDto.phonePrice())
-        .variant(ticketDto.variant())
-        .color(ticketDto.color())
-        .itemSerialNo(ticketDto.itemSerialNo())
-        .imeiNo(ticketDto.imeiNo())
-        .batteryHealth(ticketDto.batteryHealth())
-        .warranty(ticketDto.warranty())
-        .boxFlag(ticketDto.boxFlag())
-        .chargerFlag(ticketDto.chargerFlag())
-        .sealedPackFlag(ticketDto.sealedFlag())
-        .invoiceFlag(ticketDto.invoiceFlag())
-        .isDeleted("N")
-        .build();
-    phoneDetailsRepository.save(phoneDetails);
+
     TicketLifecycle ticketLifecycle = TicketLifecycle.builder()
         .ticketId(newTicket.getTicketId())
         .statusChangeTime(Instant.now())

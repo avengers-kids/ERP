@@ -11,7 +11,7 @@ public record TicketDto(
     @NotNull(message = "itemId cannot be unspecified")
     Long itemId,
     @NotNull(message = "invoiceNumber cannot be unspecified")
-    Long invoiceNumber,
+    String invoiceNumber,
     @NotNull(message = "invoiceDate cannot be unspecified")
     LocalDate invoiceDate,
     String phoneNumber,
@@ -34,7 +34,9 @@ public record TicketDto(
     String boxFlag,
     String chargerFlag,
     String sealedFlag,
-    String invoiceFlag
+    String invoiceFlag,
+    BigDecimal acquisitionCost,
+    BigDecimal refurbishedCost
 
 ) {
 

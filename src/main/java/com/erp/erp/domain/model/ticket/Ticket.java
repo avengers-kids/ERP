@@ -12,6 +12,7 @@ import jakarta.persistence.Id;
 import jakarta.persistence.Table;
 import jakarta.persistence.TableGenerator;
 import jakarta.validation.constraints.NotNull;
+import java.math.BigDecimal;
 import java.time.LocalDate;
 import lombok.AccessLevel;
 import lombok.AllArgsConstructor;
@@ -52,8 +53,8 @@ public class Ticket extends AbstractEntity {
   @NotNull
   private TicketStatus ticketStatus;
 
-  @Column(name = "INVOICE_NUMBER")
-  private Long invoiceNumber;
+  @Column(name = "INVOICE_NUMBER", length = 300)
+  private String invoiceNumber;
 
   @Column(name = "INVOICE_DATE")
   private LocalDate invoiceDate;
@@ -75,6 +76,12 @@ public class Ticket extends AbstractEntity {
 
   @Column(name = "MODE_OF_PAYMENT", length = 20)
   private String modeOfPayment;
+
+  @Column(name = "ACQUISITION_COST")
+  private BigDecimal acquisitionCost;
+
+  @Column(name = "REFURBISHED_COST")
+  private BigDecimal refurbishedCost;
 
   @Column(name = "CUSTOMER_AADHAR_ID")
   private Long customerAadharId;
