@@ -32,6 +32,7 @@ public abstract class AbstractEntity {
   private Instant createdDate;
 
   @LastModifiedDate
+  //change instant to long
   @Column(name = "LAST_UPDATE_DATE", nullable = false)
   private Instant lastUpdateDate;
 

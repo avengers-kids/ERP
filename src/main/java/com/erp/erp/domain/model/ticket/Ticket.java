@@ -89,6 +89,9 @@ public class Ticket extends AbstractEntity {
   @Column(name = "ITEM_ID", nullable = false)
   private Long itemId;
 
+  @Column(name = "USER_EMAIL", nullable = false)
+  private String userEmail;
+
   @Column(name = "IS_DELETED", length = 1)
   private String isDeleted;
 

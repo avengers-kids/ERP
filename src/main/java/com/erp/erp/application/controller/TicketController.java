@@ -3,11 +3,15 @@ package com.erp.erp.application.controller;
 import com.erp.erp.application.dto.StatusUpdateRequest;
 import com.erp.erp.application.dto.TicketDto;
 import com.erp.erp.application.ticket.TicketService;
+import com.erp.erp.domain.model.ticket.Ticket;
 import jakarta.validation.Valid;
 import java.security.Principal;
+import java.util.List;
 import org.springframework.http.HttpStatus;
 import org.springframework.http.ResponseEntity;
 import org.springframework.security.access.prepost.PreAuthorize;
+import org.springframework.security.core.annotation.AuthenticationPrincipal;
+import org.springframework.web.bind.annotation.GetMapping;
 import org.springframework.web.bind.annotation.PathVariable;
 import org.springframework.web.bind.annotation.PostMapping;
 import org.springframework.web.bind.annotation.RequestBody;
@@ -26,6 +30,8 @@ public class TicketController {
   }
 
   @PostMapping("/create-ticket")
+  //ROLE-> ROLE_USER, ROLE_MANAGER
+  //@PreAuthorize("hasRole('MANAGER') or hasRole('USER') or hasRole('ADMIN')")
   @PreAuthorize("hasAnyRole('USER','ADMIN','MANAGER')")
   public ResponseEntity<?> newPurchaseTicket(@RequestBody TicketDto ticketDto, Principal principal) {
     String email = principal.getName();
@@ -59,5 +65,11 @@ public class TicketController {
     catch (Exception ex) {
       return ResponseEntity.internalServerError().body(ex.getMessage());
     }
+  }
+
+  @GetMapping("/search-ticket")
+  public ResponseEntity<?> searchQC1Tickets(@AuthenticationPrincipal(expression = "username") String email) {
+    List<Ticket> tickets = ticketService.searchQC1Data(email);
+    return ResponseEntity.ok(tickets);
   }
 }

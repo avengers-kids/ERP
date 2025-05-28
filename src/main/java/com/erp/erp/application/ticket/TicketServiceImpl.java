@@ -2,8 +2,6 @@ package com.erp.erp.application.ticket;
 
 import com.erp.erp.application.dto.TicketDto;
 import com.erp.erp.domain.enums.TicketStatus;
-import com.erp.erp.domain.model.item.PhoneDetails;
-import com.erp.erp.domain.model.item.PhoneDetailsRepository;
 import com.erp.erp.domain.model.ticket.SoldStatus;
 import com.erp.erp.domain.model.ticket.SoldStatusRepository;
 import com.erp.erp.domain.model.ticket.Ticket;
@@ -14,6 +12,7 @@ import com.erp.erp.domain.model.user.User;
 import com.erp.erp.domain.model.user.UserRepository;
 import java.time.Instant;
 import java.util.EnumMap;
+import java.util.List;
 import java.util.Map;
 import java.util.Optional;
 import java.util.Set;
@@ -42,7 +41,6 @@ public class TicketServiceImpl implements TicketService{
   private static final String QC4_USER = "ROLE_QC4_USER";
   private static final String LISTED_USER = "ROLE_LISTED_USER";
   private final SoldStatusRepository soldStatusRepository;
-  private final PhoneDetailsRepository phoneDetailsRepository;
   private final UserRepository userRepository;
 
   static {
@@ -144,12 +142,18 @@ public class TicketServiceImpl implements TicketService{
     }
   }
 
+  @Override
+  public List<Ticket> searchQC1Data(String email) {
+    return ticketRepository.findByTicketStatusAndUserEmail(TicketStatus.QC1, email);
+  }
+
   private Long createATicketForNewPurchase(TicketDto ticketDto, String email) {
     Optional<User> user = userRepository.findByUserEmail(email);
     if (user.isEmpty()) {
       throw new UsernameNotFoundException("No user found for user " + email);
     }
     Ticket newTicket = Ticket.builder()
+        .userEmail(email)
         .clientId(user.get().getClientId())
         .ticketStatus(TicketStatus.QC1)
         .invoiceNumber(ticketDto.invoiceNumber())
@@ -177,5 +181,7 @@ public class TicketServiceImpl implements TicketService{
     ticketLifeCycleRepository.save(ticketLifecycle);
     return newTicket.getTicketId();
   }
+
+
 
 }
