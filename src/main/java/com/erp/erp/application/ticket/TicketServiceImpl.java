@@ -151,7 +151,7 @@ public class TicketServiceImpl implements TicketService{
     }
     Ticket newTicket = Ticket.builder()
         .clientId(user.get().getClientId())
-        .ticketStatus(TicketStatus.PURCHASED)
+        .ticketStatus(TicketStatus.QC1)
         .invoiceNumber(ticketDto.invoiceNumber())
         .invoiceDate(ticketDto.invoiceDate())
         .phoneNumber(ticketDto.phoneNumber())
