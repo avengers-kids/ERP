@@ -3,6 +3,7 @@ package com.erp.erp.application.controller;
 import com.erp.erp.application.dto.StatusUpdateRequest;
 import com.erp.erp.application.dto.TicketDto;
 import com.erp.erp.application.ticket.TicketService;
+import com.erp.erp.domain.enums.TicketStatus;
 import com.erp.erp.domain.model.ticket.Ticket;
 import jakarta.validation.Valid;
 import java.security.Principal;
@@ -67,9 +68,15 @@ public class TicketController {
     }
   }
 
+  @GetMapping("/search-ticket/{status}")
+  public ResponseEntity<?> searchTickets(@PathVariable TicketStatus status, @AuthenticationPrincipal(expression = "username") String email) {
+    List<Ticket> tickets = ticketService.searchTickets(status, email);
+    return ResponseEntity.ok(tickets);
+  }
+
   @GetMapping("/search-ticket")
-  public ResponseEntity<?> searchQC1Tickets(@AuthenticationPrincipal(expression = "username") String email) {
-    List<Ticket> tickets = ticketService.searchQC1Data(email);
+  public ResponseEntity<?> searchTicketsByUserName(@AuthenticationPrincipal(expression = "username") String email) {
+    List<Ticket> tickets = ticketService.searchTicketsByUserName(email);
     return ResponseEntity.ok(tickets);
   }
 }

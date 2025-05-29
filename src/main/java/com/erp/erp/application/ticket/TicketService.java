@@ -14,4 +14,8 @@ public interface TicketService {
   void createBillAndMoveToSold(Long ticketId);
 
   List<Ticket> searchQC1Data(String email);
+
+  List<Ticket> searchTickets(TicketStatus status, String email);
+
+  List<Ticket> searchTicketsByUserName(String email);
 }

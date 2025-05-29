@@ -123,6 +123,7 @@ public class TicketServiceImpl implements TicketService{
       throw new IllegalArgumentException("This ticket is deleted : " + ticketId);
     }
     else {
+      ticket.setTicketStatus(TicketStatus.SOLD);
       SoldStatus soldStatus = SoldStatus.builder()
           .ticketId(ticketId)
           .clientId(ticket.getClientId())
@@ -145,6 +146,16 @@ public class TicketServiceImpl implements TicketService{
   @Override
   public List<Ticket> searchQC1Data(String email) {
     return ticketRepository.findByTicketStatusAndUserEmail(TicketStatus.QC1, email);
+  }
+
+  @Override
+  public List<Ticket> searchTickets(TicketStatus status, String email) {
+    return ticketRepository.findByTicketStatusAndUserEmail(status, email);
+  }
+
+  @Override
+  public List<Ticket> searchTicketsByUserName(String email) {
+    return ticketRepository.findByUserEmail(email);
   }
 
   private Long createATicketForNewPurchase(TicketDto ticketDto, String email) {
