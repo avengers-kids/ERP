@@ -147,6 +147,16 @@ public class TicketServiceImpl implements TicketService{
     return ticketRepository.findByTicketStatusAndUserEmail(TicketStatus.QC1, email);
   }
 
+  @Override
+  public List<Ticket> searchTickets(TicketStatus status, String email) {
+    return ticketRepository.findByTicketStatusAndUserEmail(status, email);
+  }
+
+  @Override
+  public List<Ticket> searchTicketsByUserName(String email) {
+    return ticketRepository.findByUserEmail(email);
+  }
+
   private Long createATicketForNewPurchase(TicketDto ticketDto, String email) {
     Optional<User> user = userRepository.findByUserEmail(email);
     if (user.isEmpty()) {
