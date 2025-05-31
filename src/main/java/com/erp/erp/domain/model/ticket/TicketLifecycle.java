@@ -9,10 +9,10 @@ import jakarta.persistence.Enumerated;
 import jakarta.persistence.GeneratedValue;
 import jakarta.persistence.GenerationType;
 import jakarta.persistence.Id;
-import jakarta.persistence.SequenceGenerator;
 import jakarta.persistence.Table;
 import jakarta.persistence.TableGenerator;
 import jakarta.validation.constraints.NotNull;
+import java.math.BigDecimal;
 import java.time.Instant;
 import lombok.AccessLevel;
 import lombok.AllArgsConstructor;
@@ -59,7 +59,16 @@ public class TicketLifecycle extends AbstractEntity {
     @Column(name = "STATUS_CHANGE_TIME", nullable = false)
     private Instant statusChangeTime;
 
+    @Column(name = "USER_EMAIL", nullable = false)
+    private String userEmail;
+
+    @Column(name = "COMMENT")
+    private String comment;
+
     @Column(name = "IS_DELETED", length = 1)
     private String isDeleted;
+
+    @Column(name = "COST_AGGREGATION")
+    private BigDecimal costAggregation;
 
 }

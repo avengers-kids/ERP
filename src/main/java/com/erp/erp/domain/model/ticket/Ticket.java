@@ -92,6 +92,42 @@ public class Ticket extends AbstractEntity {
   @Column(name = "USER_EMAIL", nullable = false)
   private String userEmail;
 
+  @Column(name = "ITEM_SERIAL_NO")
+  private String itemSerialNo;
+
+  @Column(name = "IMEI_NO")
+  private String imeiNo;
+
+  @Column(name = "BATTERY_HEALTH")
+  private String batteryHealth;
+
+  @Column(name = "WARRANTY")
+  private String warranty;
+
+  @Column(name = "BOX_FLAG")
+  private String boxFlag;
+
+  @Column(name = "CHARGER_FLAG")
+  private String chargerFlag;
+
+  @Column(name = "SEALED_FLAG")
+  private String sealedFlag;
+
+  @Column(name = "INVOICE_FLAG")
+  private String invoiceFlag;
+
+  @Column(name = "INTERNAL_MEMORY")
+  private String ramRomSpecs;
+
+  @Column(name = "COLOR")
+  private String colorSpecs;
+
+  @Column(name = "COMMENT")
+  private String comment;
+
+  @Column(name = "PRODUCT_NAME")
+  private String productName;
+
   @Column(name = "IS_DELETED", length = 1)
   private String isDeleted;
 

@@ -1,10 +1,21 @@
 package com.erp.erp.domain.model.ticket;
 
 import com.erp.erp.domain.model.shared.AbstractEntity;
-import jakarta.persistence.*;
-import java.time.Instant;
+import jakarta.persistence.Column;
+import jakarta.persistence.Entity;
+import jakarta.persistence.GeneratedValue;
+import jakarta.persistence.GenerationType;
+import jakarta.persistence.Id;
+import jakarta.persistence.Table;
+import jakarta.persistence.TableGenerator;
+import java.math.BigDecimal;
 import java.time.LocalDate;
-import lombok.*;
+import lombok.AccessLevel;
+import lombok.AllArgsConstructor;
+import lombok.Builder;
+import lombok.Getter;
+import lombok.NoArgsConstructor;
+import lombok.Setter;
 
 /**
  * JPA entity mapping for the WHITELABEL_SOLD_STATUS_TABLE.
@@ -38,35 +49,32 @@ public class SoldStatus extends AbstractEntity {
     @Column(name = "CLIENT_ID", nullable = false)
     private Long clientId;
 
-    @Column(name = "INVOICE_NUMBER", length = 300, nullable = false)
-    private String invoiceNumber;
-
-    @Column(name = "INVOICE_DATE", nullable = false)
-    private LocalDate invoiceDate;
-
-    @Column(name = "PHONE_NUMBER", length = 20)
-    private String phoneNumber;
-
-    @Column(name = "CUSTOMER_NAME", length = 100)
+    @Column(name = "CUSTOMER_NAME", nullable = false)
     private String customerName;
 
-    @Column(name = "GST_NUMBER", length = 100)
-    private String gstNumber;
+    @Column(name = "PHONE_NUMBER", nullable = false)
+    private String phoneNumber;
 
-    @Column(name = "GST_ID", length = 100)
+    @Column(name = "GST_ID")
     private String gstId;
 
-    @Column(name = "PURCHASE_TYPE", length = 50)
-    private String purchaseType;
-
-    @Column(name = "MODE_OF_PAYMENT", length = 20)
+    @Column(name = "MODE_OF_PAYMENT", nullable = false)
     private String modeOfPayment;
 
-    @Column(name = "CUSTOMER_AADHAR_ID")
-    private Long customerAadharId;
+    @Column(name = "ONLINE_TRX_ID")
+    private String onlineTrxId;
 
-    @Column(name = "ITEM_ID")
-    private Long itemId;
+    @Column(name = "PLACE_OF_SALE")
+    private String placeOfSale;
+
+    @Column(name = "PROFIT")
+    private BigDecimal profit;
+
+    @Column(name = "BILL_NUMBER", nullable = false)
+    private String billNumber;
+
+    @Column(name = "BILL_DATE", nullable = false)
+    private LocalDate billDate;
 
     @Column(name = "IS_DELTED", nullable = false, length = 1)
     private String isDeleted;

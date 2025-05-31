@@ -2,6 +2,7 @@ package com.erp.erp.infrastructure.utility;
 
 import com.erp.erp.application.login.UserTokenService;
 import com.erp.erp.infrastructure.component.JwtUtil;
+import io.jsonwebtoken.JwtException;
 import jakarta.servlet.FilterChain;
 import jakarta.servlet.ServletException;
 import jakarta.servlet.http.HttpServletRequest;
@@ -51,41 +52,83 @@ public class JwtAuthenticationFilter extends OncePerRequestFilter {
     if (path.equals(request.getContextPath() + "/health")) {
       return true;
     }
-    if (new AntPathMatcher().match("/swagger-ui/**", path)) {
-      return true;
-    }
-    return false;
+    return new AntPathMatcher().match("/swagger-ui/**", path);
   }
 
   @Override
   protected void doFilterInternal(
-      HttpServletRequest req,
-      HttpServletResponse res,
-      FilterChain chain)
-      throws ServletException, IOException {
+       HttpServletRequest req,
+       HttpServletResponse res,
+       FilterChain chain
+  ) throws ServletException, IOException {
     String authHeader = req.getHeader("Authorization");
-    if (authHeader != null && authHeader.startsWith("Bearer ")) {
-      String token = authHeader.substring(7);
-      String username = jwtUtil.extractUsername(token);
-      if (username != null && SecurityContextHolder.getContext().getAuthentication() == null) {
-        UserDetails userDetails = userDetailsService.loadUserByUsername(username);
-        if (jwtUtil.validateToken(token, userDetails)) {
-          // Check token is still active (not revoked or expired in DB)
-          String jti = jwtUtil.extractJti(token);
-          if (userTokenService.isTokenActive(username, jti)) {
-            UsernamePasswordAuthenticationToken authToken =
-                new UsernamePasswordAuthenticationToken(
-                    userDetails, null, userDetails.getAuthorities());
-            authToken.setDetails(new WebAuthenticationDetailsSource().buildDetails(req));
-            SecurityContextHolder.getContext().setAuthentication(authToken);
-          } else {
-            // token revoked or expired -> reject request
-            res.setStatus(HttpServletResponse.SC_UNAUTHORIZED);
-            return;
-          }
-        }
-      }
+
+    if (authHeader == null || !authHeader.startsWith("Bearer ")) {
+      chain.doFilter(req, res);
+      return;
     }
+
+    String token = authHeader.substring(7).trim();
+    if (token.isEmpty()) {
+      logger.debug("Authorization header is present but token is empty");
+      res.sendError(HttpServletResponse.SC_UNAUTHORIZED, "Missing JWT token");
+      return;
+    }
+
+    String username;
+    try {
+      username = jwtUtil.extractUsername(token);
+    } catch (JwtException e) {
+      res.sendError(HttpServletResponse.SC_UNAUTHORIZED, "Invalid JWT token");
+      return;
+    }
+
+    // If username could not be extracted or context is already authenticated, skip further checks
+    if (username == null || SecurityContextHolder.getContext().getAuthentication() != null) {
+      chain.doFilter(req, res);
+      return;
+    }
+
+    // Load UserDetails to validate token against stored credentials/roles
+    UserDetails userDetails = userDetailsService.loadUserByUsername(username);
+
+    // Validate the token (signature & expiration)
+    try {
+      if (!jwtUtil.validateToken(token, userDetails)) {
+//        logger.debug("JWT token validation failed for user {}", username);
+        res.sendError(HttpServletResponse.SC_UNAUTHORIZED, "JWT token validation failed");
+        return;
+      }
+    } catch (JwtException e) {
+      // Any parsing exceptions during validation
+//      logger.debug("JWT validation threw exception: {}", e.getMessage());
+      res.sendError(HttpServletResponse.SC_UNAUTHORIZED, "Invalid JWT token");
+      return;
+    }
+
+    // Verify token is still active (not revoked and not expired in DB)
+    String jti;
+    try {
+      jti = jwtUtil.extractJti(token);
+    } catch (JwtException e) {
+//      logger.debug("Could not extract JTI from token: {}", e.getMessage());
+      res.sendError(HttpServletResponse.SC_UNAUTHORIZED, "Invalid JWT token");
+      return;
+    }
+
+    boolean tokenActive = userTokenService.isTokenActive(username, jti);
+    if (!tokenActive) {
+//      logger.debug("JWT token with JTI={} for user={} is not active", jti, username);
+      res.sendError(HttpServletResponse.SC_UNAUTHORIZED, "JWT token revoked or expired");
+      return;
+    }
+
+    // Build authentication and set in SecurityContext
+    UsernamePasswordAuthenticationToken authToken =
+        new UsernamePasswordAuthenticationToken(userDetails, null, userDetails.getAuthorities());
+    authToken.setDetails(new WebAuthenticationDetailsSource().buildDetails(req));
+    SecurityContextHolder.getContext().setAuthentication(authToken);
+
     chain.doFilter(req, res);
   }
 }

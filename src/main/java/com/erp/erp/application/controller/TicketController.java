@@ -1,13 +1,16 @@
 package com.erp.erp.application.controller;
 
+import com.erp.erp.application.dto.BillDto;
 import com.erp.erp.application.dto.StatusUpdateRequest;
 import com.erp.erp.application.dto.TicketDto;
 import com.erp.erp.application.ticket.TicketService;
 import com.erp.erp.domain.enums.TicketStatus;
 import com.erp.erp.domain.model.ticket.Ticket;
+import com.erp.erp.domain.model.ticket.TicketRepository;
 import jakarta.validation.Valid;
 import java.security.Principal;
 import java.util.List;
+import java.util.Map;
 import org.springframework.http.HttpStatus;
 import org.springframework.http.ResponseEntity;
 import org.springframework.security.access.prepost.PreAuthorize;
@@ -17,6 +20,7 @@ import org.springframework.web.bind.annotation.PathVariable;
 import org.springframework.web.bind.annotation.PostMapping;
 import org.springframework.web.bind.annotation.RequestBody;
 import org.springframework.web.bind.annotation.RequestMapping;
+import org.springframework.web.bind.annotation.RequestParam;
 import org.springframework.web.bind.annotation.RestController;
 
 @RestController
@@ -25,9 +29,12 @@ import org.springframework.web.bind.annotation.RestController;
 public class TicketController {
 
   private final TicketService ticketService;
+  private final TicketRepository ticketRepository;
 
-  public TicketController(TicketService ticketService) {
+  public TicketController(TicketService ticketService,
+      TicketRepository ticketRepository) {
     this.ticketService = ticketService;
+    this.ticketRepository = ticketRepository;
   }
 
   @PostMapping("/create-ticket")
@@ -46,7 +53,7 @@ public class TicketController {
       @Valid @RequestBody StatusUpdateRequest req
   ) {
     try {
-      ticketService.updateTicketStatus(id, req.newStatus());
+      ticketService.updateTicketStatus(id, req.newStatus(), req.comment(), req.cost());
       return ResponseEntity.ok("TicketStatus updated to " + req.newStatus() + " for " + id);
     }
     catch (IllegalArgumentException ex) {
@@ -55,9 +62,9 @@ public class TicketController {
   }
 
   @PostMapping("/{id}/create-bill")
-  public ResponseEntity<?> createBill(@PathVariable Long id) {
+  public ResponseEntity<?> createBill(@PathVariable Long id, @RequestBody BillDto billDto) {
     try {
-      ticketService.createBillAndMoveToSold(id);
+      ticketService.createBillAndMoveToSold(id, billDto);
       return ResponseEntity.ok("Bill Created for Ticket " + id);
     }
     catch (IllegalArgumentException ex) {
@@ -75,8 +82,21 @@ public class TicketController {
   }
 
   @GetMapping("/search-ticket")
-  public ResponseEntity<?> searchTicketsByUserName(@AuthenticationPrincipal(expression = "username") String email) {
-    List<Ticket> tickets = ticketService.searchTicketsByUserName(email);
-    return ResponseEntity.ok(tickets);
+  public ResponseEntity<List<Ticket>> searchTicket(
+      @RequestParam Map<String,String> allParams,
+      @AuthenticationPrincipal(expression="username") String username
+  ) {
+    return ResponseEntity.ok(ticketService.findTicketBySpecification(allParams, username));
   }
+
+  @GetMapping("check-ticket/{id}")
+  public ResponseEntity<?> checkTicket(@PathVariable Long id) {
+    return ResponseEntity.ok(ticketService.checkTicket(id));
+  }
+
+  @GetMapping("/check-bill/{id}")
+  public ResponseEntity<?> checkBill(@PathVariable Long id) {
+    return ResponseEntity.ok(ticketService.checkBill(id));
+  }
+
 }
