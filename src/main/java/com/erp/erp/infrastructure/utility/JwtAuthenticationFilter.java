@@ -32,27 +32,29 @@ public class JwtAuthenticationFilter extends OncePerRequestFilter {
 
   @Override
   protected boolean shouldNotFilter(HttpServletRequest request) {
-    String path = request.getRequestURI();
+    String uri = request.getRequestURI();
+    String context = request.getContextPath();
+    String path = context.isEmpty() ? uri : uri.substring(context.length());
 
-    if (path.startsWith(request.getContextPath() + "/api/auth/login")) {
+    System.out.println("path uri is : " + path);
+
+    // Skip JWT filter on any /api/auth/*
+    if (path.startsWith("/api/auth/")) {
       return true;
     }
-    if (path.startsWith(request.getContextPath() + "/api/auth/signup")) {
+
+    // Skip other purely public paths:
+    if (path.equals("/error") || path.equals("/health")) {
       return true;
     }
-    if (path.startsWith(request.getContextPath() + "/api/auth/client/signup")) {
+    if (path.startsWith("/public/")) {
       return true;
     }
-    if (path.equals(request.getContextPath() + "/error")) {
+    if (new AntPathMatcher().match("/swagger-ui/**", path)) {
       return true;
     }
-    if (path.startsWith(request.getContextPath() + "/public/")) {
-      return true;
-    }
-    if (path.equals(request.getContextPath() + "/health")) {
-      return true;
-    }
-    return new AntPathMatcher().match("/swagger-ui/**", path);
+
+    return false;
   }
 
   @Override
@@ -61,6 +63,8 @@ public class JwtAuthenticationFilter extends OncePerRequestFilter {
        HttpServletResponse res,
        FilterChain chain
   ) throws ServletException, IOException {
+
+    System.out.println("uri filter internal : " + req.getRequestURI());
     String authHeader = req.getHeader("Authorization");
 
     if (authHeader == null || !authHeader.startsWith("Bearer ")) {
