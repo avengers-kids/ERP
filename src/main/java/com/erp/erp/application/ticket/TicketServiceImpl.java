@@ -54,6 +54,7 @@ public class TicketServiceImpl implements TicketService {
 
   static {
     TRANSITION_ROLE_MAP = new EnumMap<>(TicketStatus.class);
+
     TRANSITION_ROLE_MAP.put(TicketStatus.PURCHASED, Map.of(
         TicketStatus.QC1, Set.of(PURCHASED, MANAGER))
     );
@@ -109,7 +110,13 @@ public class TicketServiceImpl implements TicketService {
     }
     TicketStatus oldTicketStatus = ticket.getTicketStatus();
     String newComment = ticket.getComment() + comment;
-    BigDecimal newRefurbishedCost = ticket.getRefurbishedCost().add(cost);
+    BigDecimal newRefurbishedCost;
+    if (ticket.getRefurbishedCost() == null) {
+      newRefurbishedCost = cost;
+    }
+    else {
+      newRefurbishedCost = ticket.getRefurbishedCost().add(cost);
+    }
     ticket.setComment(newComment);
     ticket.setRefurbishedCost(newRefurbishedCost);
     ticketRepository.save(ticket);
