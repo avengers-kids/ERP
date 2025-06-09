@@ -11,6 +11,8 @@ import com.erp.erp.domain.model.ticket.TicketLifecycle;
 import com.erp.erp.domain.model.ticket.TicketRepository;
 import com.erp.erp.domain.model.user.User;
 import com.erp.erp.domain.model.user.UserRepository;
+import jakarta.persistence.criteria.Expression;
+import jakarta.persistence.criteria.Path;
 import jakarta.persistence.criteria.Predicate;
 import jakarta.persistence.metamodel.EntityType;
 import java.math.BigDecimal;
@@ -109,6 +111,7 @@ public class TicketServiceImpl implements TicketService {
           "You need one of roles " + requiredRoles + " to make this transition");
     }
     TicketStatus oldTicketStatus = ticket.getTicketStatus();
+    String comments = "\nComment by " + ticket.getUserEmail() + " at " + LocalDate.now() + " : " + comment;
     String newComment = ticket.getComment() + comment;
     BigDecimal newRefurbishedCost;
     if (ticket.getRefurbishedCost() == null) {
@@ -190,6 +193,7 @@ public class TicketServiceImpl implements TicketService {
       newStatus = TicketStatus.QC1;
     }
     UUID invoiceUUID = UUID.randomUUID();
+    String comments = "Comment by " + email + " at " + LocalDate.now() + " : " + ticketDto.comments();
     Ticket newTicket = Ticket.builder()
         .userEmail(email)
         .clientId(user.get().getClientId())
@@ -219,7 +223,7 @@ public class TicketServiceImpl implements TicketService {
         .refurbishedCost(ticketDto.refurbishedCost())
         .ramRomSpecs(ticketDto.ramRomSpecs())
         .colorSpecs(ticketDto.ColorSpecs())
-        .comment(ticketDto.comments())
+        .comment(comments)
         .productName(ticketDto.productName())
         .build();
     ticketRepository.save(newTicket);
@@ -227,7 +231,7 @@ public class TicketServiceImpl implements TicketService {
     TicketLifecycle ticketLifecycle = TicketLifecycle.builder()
         .ticketId(newTicket.getTicketId())
         .userEmail(email)
-        .comment(ticketDto.comments())
+        .comment(comments)
         .statusChangeTime(Instant.now())
         .prevTicketStatus(null)
         .newTicketStatus(newStatus)
@@ -246,10 +250,46 @@ public class TicketServiceImpl implements TicketService {
         "productName"
     );
 
+    String fromDateStr = allParams.remove("invoiceDateFrom");
+    String toDateStr   = allParams.remove("invoiceDateTo");
+    String minCostStr  = allParams.remove("costMin");
+    String maxCostStr  = allParams.remove("costMax");
+
     Specification<Ticket> spec = (root, cq, cb) -> {
       List<Predicate> preds = new ArrayList<>();
 
       preds.add(cb.equal(root.get("userEmail"), username));
+
+      if (fromDateStr != null || toDateStr != null) {
+        Path<LocalDate> datePath = root.get("invoiceDate");
+        if (fromDateStr != null && toDateStr != null) {
+          LocalDate from = LocalDate.parse(fromDateStr);
+          LocalDate to   = LocalDate.parse(toDateStr);
+          preds.add(cb.between(datePath, from, to));
+        } else if (fromDateStr != null) {
+          LocalDate from = LocalDate.parse(fromDateStr);
+          preds.add(cb.greaterThanOrEqualTo(datePath, from));
+        } else {
+          LocalDate to = LocalDate.parse(toDateStr);
+          preds.add(cb.lessThanOrEqualTo(datePath, to));
+        }
+      }
+
+      if (minCostStr != null || maxCostStr != null) {
+        Expression<BigDecimal> totalCost =
+            cb.sum(root.get("acquisitionCost"), root.get("refurbishedCost"));
+        if (minCostStr != null && maxCostStr != null) {
+          BigDecimal min = new BigDecimal(minCostStr);
+          BigDecimal max = new BigDecimal(maxCostStr);
+          preds.add(cb.between(totalCost, min, max));
+        } else if (minCostStr != null) {
+          BigDecimal min = new BigDecimal(minCostStr);
+          preds.add(cb.greaterThanOrEqualTo(totalCost, min));
+        } else {
+          BigDecimal max = new BigDecimal(maxCostStr);
+          preds.add(cb.lessThanOrEqualTo(totalCost, max));
+        }
+      }
 
       EntityType<Ticket> meta = root.getModel();
       for (var entry : allParams.entrySet()) {
