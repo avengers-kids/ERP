@@ -17,6 +17,7 @@ import org.springframework.util.AntPathMatcher;
 import org.springframework.web.filter.OncePerRequestFilter;
 
 public class JwtAuthenticationFilter extends OncePerRequestFilter {
+
   private final JwtUtil jwtUtil;
   private final UserDetailsService userDetailsService;
   private final UserTokenService userTokenService;
@@ -39,12 +40,13 @@ public class JwtAuthenticationFilter extends OncePerRequestFilter {
     System.out.println("path uri is : " + path);
 
     // Skip JWT filter on any /api/auth/*
-    if (path.startsWith("/api/auth/")) {
+    if (path.startsWith("/api/auth/login") || path.startsWith("/api/auth/signup") || path.startsWith(
+        "/api/auth/client/signup")) {
       return true;
     }
 
     // Skip other purely public paths:
-    if (path.equals("/error") || path.equals("/health")) {
+    if (path.equals("/error") || path.startsWith("/health") || path.startsWith("/actuator/health")) {
       return true;
     }
     if (path.startsWith("/public/")) {
@@ -59,9 +61,9 @@ public class JwtAuthenticationFilter extends OncePerRequestFilter {
 
   @Override
   protected void doFilterInternal(
-       HttpServletRequest req,
-       HttpServletResponse res,
-       FilterChain chain
+      HttpServletRequest req,
+      HttpServletResponse res,
+      FilterChain chain
   ) throws ServletException, IOException {
 
     System.out.println("uri filter internal : " + req.getRequestURI());

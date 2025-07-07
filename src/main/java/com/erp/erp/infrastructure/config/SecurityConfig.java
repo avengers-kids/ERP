@@ -56,6 +56,10 @@ public class SecurityConfig {
 
         // 4) Configure which endpoints are public vs. secured
         .authorizeHttpRequests(auth -> auth
+            .requestMatchers(HttpMethod.GET, "/actuator/health", "/health")
+            .permitAll()
+            .requestMatchers(HttpMethod.OPTIONS, "/**")
+            .permitAll()
             .requestMatchers(HttpMethod.POST, "/api/auth/login", "/api/auth/signup", "/api/auth/client/signup")
             .permitAll()
             .requestMatchers(HttpMethod.GET, "/api/auth/**")
@@ -117,8 +121,9 @@ public class SecurityConfig {
     // 1) Whitelisted origins
     configuration.setAllowedOrigins(Arrays.asList(
         "http://localhost:3000",
-        "https://my-frontend.example.com",
-        ""
+        "https://abcoped.shop",
+        "https://www.abcoped.shop",
+        "https://localhost:3000"
     ));
 
     // 2) Whitelisted HTTP methods

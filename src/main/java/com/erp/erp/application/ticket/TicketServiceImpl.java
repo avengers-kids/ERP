@@ -57,30 +57,35 @@ public class TicketServiceImpl implements TicketService {
   static {
     TRANSITION_ROLE_MAP = new EnumMap<>(TicketStatus.class);
 
-    TRANSITION_ROLE_MAP.put(TicketStatus.PURCHASED, Map.of(
-        TicketStatus.QC1, Set.of(PURCHASED, MANAGER))
-    );
     TRANSITION_ROLE_MAP.put(TicketStatus.QC1, Map.of(
-        TicketStatus.QC2, Set.of(QC1_USER, MANAGER),
+        TicketStatus.FACTORY, Set.of(QC1_USER, MANAGER),
         TicketStatus.LISTED, Set.of(QC1_USER, MANAGER),
         TicketStatus.SCRAPED, Set.of(QC1_USER, MANAGER))
     );
-    TRANSITION_ROLE_MAP.put(TicketStatus.QC2, Map.of(
-        TicketStatus.QC3, Set.of(QC2_USER, MANAGER),
+    TRANSITION_ROLE_MAP.put(TicketStatus.FACTORY, Map.of(
+        TicketStatus.QC2, Set.of(QC2_USER, MANAGER),
         TicketStatus.LISTED, Set.of(QC2_USER, MANAGER),
         TicketStatus.SCRAPED, Set.of(QC2_USER, MANAGER))
     );
-    TRANSITION_ROLE_MAP.put(TicketStatus.QC3, Map.of(
-        TicketStatus.QC4, Set.of(QC3_USER, MANAGER),
-        TicketStatus.LISTED, Set.of(QC3_USER, MANAGER),
-        TicketStatus.SCRAPED, Set.of(QC3_USER, MANAGER))
-    );
-    TRANSITION_ROLE_MAP.put(TicketStatus.QC4, Map.of(
-        TicketStatus.LISTED, Set.of(QC4_USER, MANAGER),
-        TicketStatus.SCRAPED, Set.of(QC4_USER, MANAGER))
-    );
+//    TRANSITION_ROLE_MAP.put(TicketStatus.QC3, Map.of(
+//        TicketStatus.QC4, Set.of(QC3_USER, MANAGER),
+//        TicketStatus.LISTED, Set.of(QC3_USER, MANAGER),
+//        TicketStatus.SCRAPED, Set.of(QC3_USER, MANAGER))
+//    );
+//    TRANSITION_ROLE_MAP.put(TicketStatus.QC4, Map.of(
+//        TicketStatus.LISTED, Set.of(QC4_USER, MANAGER),
+//        TicketStatus.SCRAPED, Set.of(QC4_USER, MANAGER))
+//    );
     TRANSITION_ROLE_MAP.put(TicketStatus.LISTED, Map.of(
-        TicketStatus.SCRAPED, Set.of(LISTED_USER, MANAGER))
+        TicketStatus.SCRAPED, Set.of(LISTED_USER, MANAGER),
+        TicketStatus.QC2, Set.of(LISTED_USER, MANAGER),
+        TicketStatus.FACTORY, Set.of(LISTED_USER, MANAGER))
+    );
+
+    TRANSITION_ROLE_MAP.put(TicketStatus.QC2, Map.of(
+        TicketStatus.FACTORY, Set.of(QC2_USER, MANAGER),
+        TicketStatus.LISTED, Set.of(QC2_USER, MANAGER),
+        TicketStatus.SCRAPED, Set.of(QC2_USER, MANAGER))
     );
 
   }
@@ -112,7 +117,7 @@ public class TicketServiceImpl implements TicketService {
     }
     TicketStatus oldTicketStatus = ticket.getTicketStatus();
     String comments = "\nComment by " + ticket.getUserEmail() + " at " + LocalDate.now() + " : " + comment;
-    String newComment = ticket.getComment() + comment;
+    String newComment = ticket.getComment() + comments;
     BigDecimal newRefurbishedCost;
     if (ticket.getRefurbishedCost() == null) {
       newRefurbishedCost = cost;
