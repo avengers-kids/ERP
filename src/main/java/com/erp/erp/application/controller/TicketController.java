@@ -1,8 +1,10 @@
 package com.erp.erp.application.controller;
 
+import com.erp.erp.application.dto.AccountInfoDto;
 import com.erp.erp.application.dto.BillDto;
 import com.erp.erp.application.dto.StatusUpdateRequest;
 import com.erp.erp.application.dto.TicketDto;
+import com.erp.erp.application.login.AuthService;
 import com.erp.erp.application.ticket.TicketService;
 import com.erp.erp.domain.enums.TicketStatus;
 import com.erp.erp.domain.model.ticket.Ticket;
@@ -29,11 +31,13 @@ import org.springframework.web.bind.annotation.RestController;
 public class TicketController {
 
   private final TicketService ticketService;
+  private final AuthService authService;
   private final TicketRepository ticketRepository;
 
   public TicketController(TicketService ticketService,
-      TicketRepository ticketRepository) {
+      AuthService authService, TicketRepository ticketRepository) {
     this.ticketService = ticketService;
+    this.authService = authService;
     this.ticketRepository = ticketRepository;
   }
 
@@ -105,6 +109,11 @@ public class TicketController {
       @AuthenticationPrincipal(expression="username") String username
   ) {
     return ResponseEntity.ok(ticketService.findTicketBySpecification(allParams, username));
+  }
+
+  @GetMapping("/my-account")
+  public ResponseEntity<AccountInfoDto> fetchAccountInfo(@AuthenticationPrincipal(expression="username") String username) {
+    return ResponseEntity.ok(authService.fetchUserInfo(username));
   }
 
 }

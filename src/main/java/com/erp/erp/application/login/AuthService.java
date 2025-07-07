@@ -1,5 +1,6 @@
 package com.erp.erp.application.login;
 
+import com.erp.erp.application.dto.AccountInfoDto;
 import com.erp.erp.application.dto.ClientSignupRequest;
 import com.erp.erp.application.dto.UserSignupRequest;
 import com.erp.erp.application.dto.response.APIResponse;
@@ -154,6 +155,26 @@ public class AuthService implements UserDetailsService {
     userTokenService.saveToken(username, newJti, newIssuedAt, newExpiresAt);
 
     return newToken;
+  }
+
+  public AccountInfoDto fetchUserInfo(String userEmail) {
+    Optional<User> userOpt = userRepository.findByUserEmail(userEmail);
+    if (userOpt.isEmpty()) {
+      throw new UsernameNotFoundException("User email not found");
+    }
+    else {
+      User user = userOpt.get();
+      AccountInfoDto accountInfoDto = AccountInfoDto.builder()
+          .legalName(user.getLegalName())
+          .userName(user.getUserName())
+          .phoneNumber(user.getUserPhoneNumber())
+          .storeName(user.getStoreName())
+          .dateOfBirth(user.getDateOfBirth())
+          .userEmail(userEmail)
+          .userRoles(user.getUserRoles())
+          .build();
+      return accountInfoDto;
+    }
   }
 
   @Override
