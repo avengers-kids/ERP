@@ -118,11 +118,14 @@ public class TicketServiceImpl implements TicketService {
           "You need one of roles " + requiredRoles + " to make this transition");
     }
     TicketStatus oldTicketStatus = ticket.getTicketStatus();
-    String comments =
-        "Ticket has been updated to status " + newTicketStatus + " on " + DateTimeFormatterUtil.toReadable(
-            LocalDateTime.now()) +
-            ".\nComment added by " + ticket.getUserEmail() + " : " + comment;
-    String newComment = ticket.getComment() + comments;
+    String newComment = null;
+    if (comment != null) {
+      String comments =
+          "Ticket has been updated to status " + newTicketStatus + " on " + DateTimeFormatterUtil.toReadable(
+              LocalDateTime.now()) +
+              ".\nComment added by " + ticket.getUserEmail() + " : " + comment;
+      newComment = ticket.getComment() + comments;
+    }
     BigDecimal newRefurbishedCost;
     if (ticket.getRefurbishedCost() == null) {
       newRefurbishedCost = cost;

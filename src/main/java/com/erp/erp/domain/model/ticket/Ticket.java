@@ -125,7 +125,7 @@ public class Ticket extends AbstractEntity {
   @Column(name = "COLOR")
   private String colorSpecs;
 
-  @Column(name = "COMMENT")
+  @Column(name = "COMMENT", length = 5000)
   private String comment;
 
   @Column(name = "PRODUCT_NAME")
