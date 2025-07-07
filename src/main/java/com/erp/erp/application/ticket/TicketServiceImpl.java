@@ -278,7 +278,8 @@ public class TicketServiceImpl implements TicketService {
   ) {
     Set<String> CONTAINS_FIELDS = Set.of(
         "ramRomSpecs",
-        "productName"
+        "productName",
+        "brand"
     );
 
     String fromDateStr = allParams.remove("invoiceDateFrom");
