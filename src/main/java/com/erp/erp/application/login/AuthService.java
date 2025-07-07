@@ -53,6 +53,9 @@ public class AuthService implements UserDetailsService {
         .clientId(userSignupRequest.getClientId())
         .userPhoneNumber(userSignupRequest.getUserPhoneNumber())
         .userRoles(userSignupRequest.getUserRoles())
+        .legalName(userSignupRequest.getLegalName())
+        .storeName(userSignupRequest.getStoreName())
+        .dateOfBirth(userSignupRequest.getDateOfBirth())
         .build();
     userRepository.save(newUser);
     return newUser;

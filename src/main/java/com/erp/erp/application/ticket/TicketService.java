@@ -24,6 +24,8 @@ public interface TicketService {
 
   List<Ticket> findTicketBySpecification(Map<String, String> allParams, String username);
 
+  List<Ticket> findInventoryTicketBySpecification(Map<String, String> allParams, String username);
+
   BillDto checkBill(Long ticketId);
 
   Ticket checkTicket(Long ticketId);

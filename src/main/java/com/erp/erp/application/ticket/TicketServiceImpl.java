@@ -11,6 +11,7 @@ import com.erp.erp.domain.model.ticket.TicketLifecycle;
 import com.erp.erp.domain.model.ticket.TicketRepository;
 import com.erp.erp.domain.model.user.User;
 import com.erp.erp.domain.model.user.UserRepository;
+import com.erp.erp.infrastructure.utility.DateTimeFormatterUtil;
 import jakarta.persistence.criteria.Expression;
 import jakarta.persistence.criteria.Path;
 import jakarta.persistence.criteria.Predicate;
@@ -18,6 +19,7 @@ import jakarta.persistence.metamodel.EntityType;
 import java.math.BigDecimal;
 import java.time.Instant;
 import java.time.LocalDate;
+import java.time.LocalDateTime;
 import java.util.ArrayList;
 import java.util.EnumMap;
 import java.util.List;
@@ -116,13 +118,15 @@ public class TicketServiceImpl implements TicketService {
           "You need one of roles " + requiredRoles + " to make this transition");
     }
     TicketStatus oldTicketStatus = ticket.getTicketStatus();
-    String comments = "\nComment by " + ticket.getUserEmail() + " at " + LocalDate.now() + " : " + comment;
+    String comments =
+        "Ticket has been updated to status " + newTicketStatus + " on " + DateTimeFormatterUtil.toReadable(
+            LocalDateTime.now()) +
+            ".\nComment added by " + ticket.getUserEmail() + " : " + comment;
     String newComment = ticket.getComment() + comments;
     BigDecimal newRefurbishedCost;
     if (ticket.getRefurbishedCost() == null) {
       newRefurbishedCost = cost;
-    }
-    else {
+    } else {
       newRefurbishedCost = ticket.getRefurbishedCost().add(cost);
     }
     ticket.setComment(newComment);
@@ -230,6 +234,7 @@ public class TicketServiceImpl implements TicketService {
         .colorSpecs(ticketDto.ColorSpecs())
         .comment(comments)
         .productName(ticketDto.productName())
+        .brand(ticketDto.brand())
         .build();
     ticketRepository.save(newTicket);
 
@@ -250,17 +255,38 @@ public class TicketServiceImpl implements TicketService {
       Map<String, String> allParams,
       String username
   ) {
+    Specification<Ticket> spec = buildSpecification(allParams, username);
+    return ticketRepository.findAll(spec);
+  }
+
+  @Override
+  public List<Ticket> findInventoryTicketBySpecification(
+      Map<String, String> allParams,
+      String username
+  ) {
+    Specification<Ticket> baseSpec = buildSpecification(allParams, username);
+    Specification<Ticket> notSoldSpec =
+        (root, cq, cb) -> cb.notEqual(root.get("status"), TicketStatus.SOLD);
+    Specification<Ticket> combined = Specification.where(baseSpec)
+        .and(notSoldSpec);
+    return ticketRepository.findAll(combined);
+  }
+
+  private Specification<Ticket> buildSpecification(
+      Map<String, String> allParams,
+      String username
+  ) {
     Set<String> CONTAINS_FIELDS = Set.of(
         "ramRomSpecs",
         "productName"
     );
 
     String fromDateStr = allParams.remove("invoiceDateFrom");
-    String toDateStr   = allParams.remove("invoiceDateTo");
-    String minCostStr  = allParams.remove("costMin");
-    String maxCostStr  = allParams.remove("costMax");
+    String toDateStr = allParams.remove("invoiceDateTo");
+    String minCostStr = allParams.remove("costMin");
+    String maxCostStr = allParams.remove("costMax");
 
-    Specification<Ticket> spec = (root, cq, cb) -> {
+    return (root, cq, cb) -> {
       List<Predicate> preds = new ArrayList<>();
 
       preds.add(cb.equal(root.get("userEmail"), username));
@@ -269,7 +295,7 @@ public class TicketServiceImpl implements TicketService {
         Path<LocalDate> datePath = root.get("invoiceDate");
         if (fromDateStr != null && toDateStr != null) {
           LocalDate from = LocalDate.parse(fromDateStr);
-          LocalDate to   = LocalDate.parse(toDateStr);
+          LocalDate to = LocalDate.parse(toDateStr);
           preds.add(cb.between(datePath, from, to));
         } else if (fromDateStr != null) {
           LocalDate from = LocalDate.parse(fromDateStr);
@@ -334,8 +360,6 @@ public class TicketServiceImpl implements TicketService {
 
       return cb.and(preds.toArray(new Predicate[0]));
     };
-
-    return ticketRepository.findAll(spec);
   }
 
 

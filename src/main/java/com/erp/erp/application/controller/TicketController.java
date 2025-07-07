@@ -99,4 +99,12 @@ public class TicketController {
     return ResponseEntity.ok(ticketService.checkBill(id));
   }
 
+  @GetMapping("/inventory-ticket")
+  public ResponseEntity<List<Ticket>> searchInventory(
+      @RequestParam Map<String, String> allParams,
+      @AuthenticationPrincipal(expression="username") String username
+  ) {
+    return ResponseEntity.ok(ticketService.findTicketBySpecification(allParams, username));
+  }
+
 }

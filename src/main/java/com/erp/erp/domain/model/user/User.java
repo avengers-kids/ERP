@@ -9,6 +9,7 @@ import jakarta.persistence.Id;
 import jakarta.persistence.Table;
 import jakarta.persistence.TableGenerator;
 import jakarta.validation.constraints.NotNull;
+import java.time.LocalDate;
 import lombok.AccessLevel;
 import lombok.AllArgsConstructor;
 import lombok.Builder;
@@ -37,6 +38,10 @@ public class User extends AbstractEntity {
     @Column(name = "USER_ID", nullable = false)
     private long userId;
 
+    @Column(name = "LEGAL_NAME", nullable = false)
+    @NotNull(message = "User name cannot be empty")
+    private String legalName;
+
     @Column(name = "USER_NAME", nullable = false, length = 100)
     @NotNull(message = "User name cannot be empty")
     private String userName;
@@ -48,6 +53,13 @@ public class User extends AbstractEntity {
     @Column(name = "CLIENT_ID", nullable = false)
     @NotNull(message = "clientId cannot be empty")
     private Long clientId;
+
+    @Column(name = "STORE_NAME", nullable = false)
+    @NotNull(message = "Store name cannot be empty")
+    private String storeName;
+
+    @Column(name = "DATE_OF_BIRTH")
+    private LocalDate dateOfBirth;
 
     @Column(name = "USER_EMAIL", nullable = false, length = 255)
     @NotNull(message = "userEmail cannot be empty")

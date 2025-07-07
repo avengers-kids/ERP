@@ -1,6 +1,7 @@
 package com.erp.erp.application.dto;
 
 import jakarta.validation.constraints.NotNull;
+import java.time.LocalDate;
 import lombok.Builder;
 import lombok.Getter;
 import lombok.Setter;
@@ -18,4 +19,9 @@ public class UserSignupRequest {
   private String userRoles;
   @NotNull
   private String password;
+  @NotNull
+  private String legalName;
+  @NotNull
+  private String storeName;
+  private LocalDate dateOfBirth;
 }

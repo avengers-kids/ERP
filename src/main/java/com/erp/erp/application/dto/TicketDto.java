@@ -33,7 +33,8 @@ public record TicketDto(
     String ramRomSpecs,
     String ColorSpecs,
     String comments,
-    String productName
+    String productName,
+    String brand
 
 ) {
 
