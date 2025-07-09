@@ -1,7 +1,10 @@
 package com.erp.erp.domain.model.ticket;
 
+import com.erp.erp.domain.enums.PaymentMode;
 import com.erp.erp.domain.enums.TicketStatus;
+import com.erp.erp.domain.model.payment.Payment;
 import com.erp.erp.domain.model.shared.AbstractEntity;
+import jakarta.persistence.CascadeType;
 import jakarta.persistence.Column;
 import jakarta.persistence.Entity;
 import jakarta.persistence.EnumType;
@@ -9,11 +12,14 @@ import jakarta.persistence.Enumerated;
 import jakarta.persistence.GeneratedValue;
 import jakarta.persistence.GenerationType;
 import jakarta.persistence.Id;
+import jakarta.persistence.OneToMany;
 import jakarta.persistence.Table;
 import jakarta.persistence.TableGenerator;
 import jakarta.validation.constraints.NotNull;
 import java.math.BigDecimal;
 import java.time.LocalDate;
+import java.util.ArrayList;
+import java.util.List;
 import lombok.AccessLevel;
 import lombok.AllArgsConstructor;
 import lombok.Builder;
@@ -75,7 +81,7 @@ public class Ticket extends AbstractEntity {
   private String productPurchaseType;
 
   @Column(name = "MODE_OF_PAYMENT", length = 20)
-  private String modeOfPayment;
+  private PaymentMode modeOfPayment;
 
   @Column(name = "ACQUISITION_COST")
   private BigDecimal acquisitionCost;
@@ -133,5 +139,24 @@ public class Ticket extends AbstractEntity {
 
   @Column(name = "IS_DELETED", length = 1)
   private String isDeleted;
+
+  @OneToMany(
+      mappedBy = "ticket",
+      cascade = CascadeType.ALL,
+      orphanRemoval = true
+  )
+  private List<Payment> payments = new ArrayList<>();
+
+  public BigDecimal totalPaid() {
+    return payments.stream()
+        .map(Payment::getAmount)
+        .reduce(BigDecimal.ZERO, BigDecimal::add);
+  }
+
+  public boolean isFullyPaid() {
+    BigDecimal invoiceTotal =
+        acquisitionCost.add(refurbishedCost);
+    return totalPaid().compareTo(invoiceTotal) >= 0;
+  }
 
 }

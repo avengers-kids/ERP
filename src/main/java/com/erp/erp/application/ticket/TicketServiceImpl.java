@@ -60,11 +60,13 @@ public class TicketServiceImpl implements TicketService {
     TRANSITION_ROLE_MAP = new EnumMap<>(TicketStatus.class);
 
     TRANSITION_ROLE_MAP.put(TicketStatus.QC1, Map.of(
+        TicketStatus.QC2, Set.of(QC1_USER, MANAGER),
         TicketStatus.FACTORY, Set.of(QC1_USER, MANAGER),
         TicketStatus.LISTED, Set.of(QC1_USER, MANAGER),
         TicketStatus.SCRAPED, Set.of(QC1_USER, MANAGER))
     );
     TRANSITION_ROLE_MAP.put(TicketStatus.FACTORY, Map.of(
+        TicketStatus.QC1, Set.of(QC1_USER, MANAGER),
         TicketStatus.QC2, Set.of(QC2_USER, MANAGER),
         TicketStatus.LISTED, Set.of(QC2_USER, MANAGER),
         TicketStatus.SCRAPED, Set.of(QC2_USER, MANAGER))
@@ -81,7 +83,8 @@ public class TicketServiceImpl implements TicketService {
     TRANSITION_ROLE_MAP.put(TicketStatus.LISTED, Map.of(
         TicketStatus.SCRAPED, Set.of(LISTED_USER, MANAGER),
         TicketStatus.QC2, Set.of(LISTED_USER, MANAGER),
-        TicketStatus.FACTORY, Set.of(LISTED_USER, MANAGER))
+        TicketStatus.FACTORY, Set.of(LISTED_USER, MANAGER),
+        TicketStatus.QC1, Set.of(LISTED_USER, MANAGER))
     );
 
     TRANSITION_ROLE_MAP.put(TicketStatus.QC2, Map.of(
@@ -205,7 +208,13 @@ public class TicketServiceImpl implements TicketService {
       newStatus = TicketStatus.QC1;
     }
     UUID invoiceUUID = UUID.randomUUID();
-    String comments = "Comment by " + email + " at " + LocalDate.now() + " : " + ticketDto.comments();
+    String comments = null;
+    if (ticketDto.comments() != null) {
+      comments =
+          "Ticket has created with status " + newStatus + " on " + DateTimeFormatterUtil.toReadable(
+              LocalDateTime.now()) +
+              ".\nComment added by " + email + " : " + ticketDto.comments();
+    }
     Ticket newTicket = Ticket.builder()
         .userEmail(email)
         .clientId(user.get().getClientId())
@@ -269,7 +278,7 @@ public class TicketServiceImpl implements TicketService {
   ) {
     Specification<Ticket> baseSpec = buildSpecification(allParams, username);
     Specification<Ticket> notSoldSpec =
-        (root, cq, cb) -> cb.notEqual(root.get("status"), TicketStatus.SOLD);
+        (root, cq, cb) -> cb.notEqual(root.get("ticketStatus"), TicketStatus.SOLD);
     Specification<Ticket> combined = Specification.where(baseSpec)
         .and(notSoldSpec);
     return ticketRepository.findAll(combined);
@@ -282,7 +291,8 @@ public class TicketServiceImpl implements TicketService {
     Set<String> CONTAINS_FIELDS = Set.of(
         "ramRomSpecs",
         "productName",
-        "brand"
+        "brand",
+        "imeiNo"
     );
 
     String fromDateStr = allParams.remove("invoiceDateFrom");

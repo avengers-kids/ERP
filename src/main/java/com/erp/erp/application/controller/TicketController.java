@@ -32,13 +32,11 @@ public class TicketController {
 
   private final TicketService ticketService;
   private final AuthService authService;
-  private final TicketRepository ticketRepository;
 
   public TicketController(TicketService ticketService,
-      AuthService authService, TicketRepository ticketRepository) {
+      AuthService authService) {
     this.ticketService = ticketService;
     this.authService = authService;
-    this.ticketRepository = ticketRepository;
   }
 
   @PostMapping("/create-ticket")
@@ -59,8 +57,7 @@ public class TicketController {
     try {
       ticketService.updateTicketStatus(id, req.newStatus(), req.comment(), req.cost());
       return ResponseEntity.ok("TicketStatus updated to " + req.newStatus() + " for " + id);
-    }
-    catch (IllegalArgumentException ex) {
+    } catch (IllegalArgumentException ex) {
       return ResponseEntity.badRequest().body(ex.getMessage());
     }
   }
@@ -70,25 +67,24 @@ public class TicketController {
     try {
       ticketService.createBillAndMoveToSold(id, billDto);
       return ResponseEntity.ok("Bill Created for Ticket " + id);
-    }
-    catch (IllegalArgumentException ex) {
+    } catch (IllegalArgumentException ex) {
       return ResponseEntity.badRequest().body(ex.getMessage());
-    }
-    catch (Exception ex) {
+    } catch (Exception ex) {
       return ResponseEntity.internalServerError().body(ex.getMessage());
     }
   }
 
   @GetMapping("/search-ticket/{status}")
-  public ResponseEntity<?> searchTickets(@PathVariable TicketStatus status, @AuthenticationPrincipal(expression = "username") String email) {
+  public ResponseEntity<?> searchTickets(@PathVariable TicketStatus status,
+      @AuthenticationPrincipal(expression = "username") String email) {
     List<Ticket> tickets = ticketService.searchTickets(status, email);
     return ResponseEntity.ok(tickets);
   }
 
   @GetMapping("/search-ticket")
   public ResponseEntity<List<Ticket>> searchTicket(
-      @RequestParam Map<String,String> allParams,
-      @AuthenticationPrincipal(expression="username") String username
+      @RequestParam Map<String, String> allParams,
+      @AuthenticationPrincipal(expression = "username") String username
   ) {
     return ResponseEntity.ok(ticketService.findTicketBySpecification(allParams, username));
   }
@@ -106,13 +102,14 @@ public class TicketController {
   @GetMapping("/inventory-ticket")
   public ResponseEntity<List<Ticket>> searchInventory(
       @RequestParam Map<String, String> allParams,
-      @AuthenticationPrincipal(expression="username") String username
+      @AuthenticationPrincipal(expression = "username") String username
   ) {
-    return ResponseEntity.ok(ticketService.findTicketBySpecification(allParams, username));
+    return ResponseEntity.ok(ticketService.findInventoryTicketBySpecification(allParams, username));
   }
 
   @GetMapping("/my-account")
-  public ResponseEntity<AccountInfoDto> fetchAccountInfo(@AuthenticationPrincipal(expression="username") String username) {
+  public ResponseEntity<AccountInfoDto> fetchAccountInfo(
+      @AuthenticationPrincipal(expression = "username") String username) {
     return ResponseEntity.ok(authService.fetchUserInfo(username));
   }
 

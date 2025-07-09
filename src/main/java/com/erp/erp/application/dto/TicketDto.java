@@ -1,5 +1,6 @@
 package com.erp.erp.application.dto;
 
+import com.erp.erp.domain.enums.PaymentMode;
 import com.erp.erp.domain.model.ticket.Ticket;
 import java.math.BigDecimal;
 import java.time.LocalDate;
@@ -18,7 +19,7 @@ public record TicketDto(
     String gstNumber,
     String gstId,
     String productPurchaseType,
-    String modeOfPayment,
+    PaymentMode modeOfPayment,
     Long customerAadharId,
     String itemSerialNo,
     String imeiNo,
