@@ -80,7 +80,9 @@ public class Ticket extends AbstractEntity {
   @Column(name = "PRODUCT_PURCHASE_TYPE", length = 50)
   private String productPurchaseType;
 
-  @Column(name = "MODE_OF_PAYMENT", length = 20)
+  @Enumerated(EnumType.STRING)
+  @Column(name = "MODE_OF_PAYMENT", length = 20, nullable = false)
+  @NotNull
   private PaymentMode modeOfPayment;
 
   @Column(name = "ACQUISITION_COST")
@@ -136,6 +138,14 @@ public class Ticket extends AbstractEntity {
 
   @Column(name = "PRODUCT_NAME")
   private String productName;
+
+  @OneToMany(
+      mappedBy = "ticket",
+      cascade = CascadeType.ALL,
+      orphanRemoval = true
+  )
+  @Builder.Default
+  private List<TicketLifecycle> lifecycles = new ArrayList<>();
 
   @Column(name = "IS_DELETED", length = 1)
   private String isDeleted;

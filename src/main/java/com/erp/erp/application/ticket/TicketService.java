@@ -1,6 +1,7 @@
 package com.erp.erp.application.ticket;
 
 import com.erp.erp.application.dto.BillDto;
+import com.erp.erp.application.dto.InvoiceDto;
 import com.erp.erp.application.dto.TicketDto;
 import com.erp.erp.domain.enums.TicketStatus;
 import com.erp.erp.domain.model.ticket.Ticket;
@@ -29,4 +30,7 @@ public interface TicketService {
   BillDto checkBill(Long ticketId);
 
   Ticket checkTicket(Long ticketId);
+
+  List<Ticket> checkoutForBuyCart(String userEmail, InvoiceDto invoiceDto);
+
 }

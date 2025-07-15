@@ -1,12 +1,16 @@
 package com.erp.erp.application.ticket;
 
 import com.erp.erp.application.dto.BillDto;
+import com.erp.erp.application.dto.InvoiceDto;
 import com.erp.erp.application.dto.TicketDto;
+import com.erp.erp.application.item.CartService;
 import com.erp.erp.domain.enums.TicketStatus;
+import com.erp.erp.domain.model.item.Cart;
+import com.erp.erp.domain.model.item.CartItem;
+import com.erp.erp.domain.model.item.CartItemDetail;
 import com.erp.erp.domain.model.ticket.SoldStatus;
 import com.erp.erp.domain.model.ticket.SoldStatusRepository;
 import com.erp.erp.domain.model.ticket.Ticket;
-import com.erp.erp.domain.model.ticket.TicketLifeCycleRepository;
 import com.erp.erp.domain.model.ticket.TicketLifecycle;
 import com.erp.erp.domain.model.ticket.TicketRepository;
 import com.erp.erp.domain.model.user.User;
@@ -44,17 +48,14 @@ import org.springframework.transaction.annotation.Transactional;
 public class TicketServiceImpl implements TicketService {
 
   private final TicketRepository ticketRepository;
-  private final TicketLifeCycleRepository ticketLifeCycleRepository;
   private static final Map<TicketStatus, Map<TicketStatus, Set<String>>> TRANSITION_ROLE_MAP;
   private static final String MANAGER = "ROLE_MANAGER";
-  private static final String PURCHASED = "ROLE_PURCHASED_USER";
   private static final String QC1_USER = "ROLE_QC1_USER";
   private static final String QC2_USER = "ROLE_QC2_USER";
-  private static final String QC3_USER = "ROLE_QC3_USER";
-  private static final String QC4_USER = "ROLE_QC4_USER";
   private static final String LISTED_USER = "ROLE_LISTED_USER";
   private final SoldStatusRepository soldStatusRepository;
   private final UserRepository userRepository;
+  private final CartService cartService;
 
   static {
     TRANSITION_ROLE_MAP = new EnumMap<>(TicketStatus.class);
@@ -137,10 +138,9 @@ public class TicketServiceImpl implements TicketService {
     }
     ticket.setComment(newComment);
     ticket.setRefurbishedCost(newRefurbishedCost);
-    ticketRepository.save(ticket);
     ticket.setTicketStatus(newTicketStatus);
     TicketLifecycle ticketLifecycle = TicketLifecycle.builder()
-        .ticketId(ticketId)
+        .ticket(ticket)
         .userEmail(ticket.getUserEmail())
         .comment(comment)
         .statusChangeTime(Instant.now())
@@ -148,7 +148,8 @@ public class TicketServiceImpl implements TicketService {
         .newTicketStatus(newTicketStatus)
         .costAggregation(cost)
         .build();
-    ticketLifeCycleRepository.save(ticketLifecycle);
+    ticket.getLifecycles().add(ticketLifecycle);
+    ticketRepository.save(ticket);
   }
 
   public void createBillAndMoveToSold(Long ticketId, BillDto billDto) {
@@ -248,17 +249,16 @@ public class TicketServiceImpl implements TicketService {
         .productName(ticketDto.productName())
         .brand(ticketDto.brand())
         .build();
-    ticketRepository.save(newTicket);
-
     TicketLifecycle ticketLifecycle = TicketLifecycle.builder()
-        .ticketId(newTicket.getTicketId())
+        .ticket(newTicket)
         .userEmail(email)
         .comment(comments)
         .statusChangeTime(Instant.now())
         .prevTicketStatus(null)
         .newTicketStatus(newStatus)
         .build();
-    ticketLifeCycleRepository.save(ticketLifecycle);
+    newTicket.getLifecycles().add(ticketLifecycle);
+    ticketRepository.save(newTicket);
     return newTicket.getTicketId();
   }
 
@@ -405,6 +405,84 @@ public class TicketServiceImpl implements TicketService {
       throw new IllegalArgumentException("No ticket found.");
     }
     return ticket.get();
+  }
+
+  @Override
+  @Transactional
+  public List<Ticket> checkoutForBuyCart(String userEmail, InvoiceDto invoiceDto) {
+    Optional<User> user = userRepository.findByUserEmail(userEmail);
+    if (user.isEmpty()) {
+      throw new UsernameNotFoundException("No user found for user " + userEmail);
+    }
+    Cart cart = cartService.getOrCreateBuyCart(userEmail);
+    List<Ticket> tickets = new ArrayList<>();
+    for (CartItem item : cart.getItems()) {
+      for (CartItemDetail detail : item.getDetails()) {
+        tickets.add(createTicketForNewPurchase(detail, item, invoiceDto, user.get()));
+      }
+    }
+    List<Ticket> saved = ticketRepository.saveAll(tickets);
+    cartService.clearCart(cart);
+    return saved;
+  }
+
+  private Ticket createTicketForNewPurchase(CartItemDetail cart, CartItem item, InvoiceDto invoiceDto, User user) {
+    TicketStatus newStatus;
+    if (cart.getSealedFlag().equalsIgnoreCase("Y")) {
+      newStatus = TicketStatus.LISTED;
+    } else {
+      newStatus = TicketStatus.QC1;
+    }
+    UUID invoiceUUID = UUID.randomUUID();
+    String comments = null;
+    if (cart.getComment() != null) {
+      comments =
+          "Ticket has created with status " + newStatus + " on " + DateTimeFormatterUtil.toReadable(
+              LocalDateTime.now()) +
+              ".\nComment added by " + user.getUserEmail() + " : " + cart.getComment();
+    }
+    Ticket newTicket = Ticket.builder()
+        .userEmail(user.getUserEmail())
+        .clientId(user.getClientId())
+        .ticketStatus(newStatus)
+        .invoiceNumber(invoiceUUID.toString())
+        .invoiceDate(LocalDate.now())
+        .phoneNumber(invoiceDto.phoneNumber())
+        .customerName(invoiceDto.customerName())
+        .gstNumber(invoiceDto.gstNumber())
+        .gstId(invoiceDto.gstId())
+        .productPurchaseType(invoiceDto.productPurchaseType())
+        .modeOfPayment(invoiceDto.modeOfPayment())
+        .customerAadharId(invoiceDto.customerAadharId())
+        .itemId(item.getItemId())
+        .acquisitionCost(cart.getAcquisitionCost())
+        .refurbishedCost(cart.getRefurbishedCost())
+        .isDeleted("N")
+        .itemSerialNo(cart.getItemSerialNo())
+        .imeiNo(cart.getImeiNo())
+        .batteryHealth(cart.getBatteryHealth())
+        .warranty(cart.getWarranty())
+        .boxFlag(cart.getBoxFlag())
+        .chargerFlag(cart.getChargerFlag())
+        .sealedFlag(cart.getSealedFlag())
+        .invoiceFlag(cart.getInvoiceFlag())
+        .ramRomSpecs(cart.getRamRomSpecs())
+        .colorSpecs(cart.getColorSpecs())
+        .comment(comments)
+        .productName(cart.getProductName())
+        .brand(cart.getBrand())
+        .build();
+
+    TicketLifecycle ticketLifecycle = TicketLifecycle.builder()
+        .ticket(newTicket)
+        .userEmail(user.getUserEmail())
+        .comment(comments)
+        .statusChangeTime(Instant.now())
+        .prevTicketStatus(null)
+        .newTicketStatus(newStatus)
+        .build();
+    newTicket.getLifecycles().add(ticketLifecycle);
+    return newTicket;
   }
 
 

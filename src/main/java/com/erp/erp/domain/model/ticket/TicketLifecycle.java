@@ -2,24 +2,11 @@ package com.erp.erp.domain.model.ticket;
 
 import com.erp.erp.domain.enums.TicketStatus;
 import com.erp.erp.domain.model.shared.AbstractEntity;
-import jakarta.persistence.Column;
-import jakarta.persistence.Entity;
-import jakarta.persistence.EnumType;
-import jakarta.persistence.Enumerated;
-import jakarta.persistence.GeneratedValue;
-import jakarta.persistence.GenerationType;
-import jakarta.persistence.Id;
-import jakarta.persistence.Table;
-import jakarta.persistence.TableGenerator;
+import jakarta.persistence.*;
 import jakarta.validation.constraints.NotNull;
 import java.math.BigDecimal;
 import java.time.Instant;
-import lombok.AccessLevel;
-import lombok.AllArgsConstructor;
-import lombok.Builder;
-import lombok.Getter;
-import lombok.NoArgsConstructor;
-import lombok.Setter;
+import lombok.*;
 
 @Entity
 @Table(name = "WHITELABEL_TICKET_LIFECYCLE")
@@ -44,6 +31,10 @@ public class TicketLifecycle extends AbstractEntity {
     @Column(name = "TICKET_LC_ID", nullable = false)
     private Long ticketLcId;
 
+    @ManyToOne(optional = false, fetch = FetchType.LAZY)
+    @JoinColumn(name = "TICKET_ID", nullable = false, updatable = false)
+    private Ticket ticket;
+
     @Enumerated(EnumType.STRING)
     @Column(name = "PREV_TICKET_STATUS", length = 20)
     private TicketStatus prevTicketStatus;
@@ -53,16 +44,13 @@ public class TicketLifecycle extends AbstractEntity {
     @NotNull
     private TicketStatus newTicketStatus;
 
-    @Column(name = "TICKET_ID", nullable = false)
-    private Long ticketId;
-
     @Column(name = "STATUS_CHANGE_TIME", nullable = false)
     private Instant statusChangeTime;
 
     @Column(name = "USER_EMAIL", nullable = false)
     private String userEmail;
 
-    @Column(name = "COMMENT")
+    @Column(name = "COMMENT", length = 5000)
     private String comment;
 
     @Column(name = "IS_DELETED", length = 1)
