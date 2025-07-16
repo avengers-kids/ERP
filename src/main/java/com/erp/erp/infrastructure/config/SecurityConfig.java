@@ -30,6 +30,7 @@ import java.util.Arrays;
 @EnableWebSecurity
 @EnableMethodSecurity(prePostEnabled = true)
 public class SecurityConfig {
+
   private final JwtUtil jwtUtil;
 
   public SecurityConfig(JwtUtil jwtUtil) {
@@ -60,7 +61,8 @@ public class SecurityConfig {
             .permitAll()
             .requestMatchers(HttpMethod.OPTIONS, "/**")
             .permitAll()
-            .requestMatchers(HttpMethod.POST, "/api/auth/login", "/api/auth/signup", "/api/auth/client/signup")
+            .requestMatchers(HttpMethod.POST, "/api/auth/login", "/api/auth/signup", "/api/auth/client/signup",
+                "/api/auth/store/signup")
             .permitAll()
             .requestMatchers(HttpMethod.GET, "/api/auth/**")
             .permitAll()
@@ -105,14 +107,12 @@ public class SecurityConfig {
   }
 
   /**
-   * Defines which origins, headers, and methods are allowed for CORS.
-   * You can add as many origins as you need to this list.
-   * In this example, we’re allowing two specific origins:
-   *   1) http://localhost:3000
-   *   2) https://my-frontend.example.com
-   *
-   * We also allow GET, POST, PUT, DELETE, OPTIONS, etc., and permit all headers
-   * (you can lock this down further if you want).
+   * Defines which origins, headers, and methods are allowed for CORS. You can add as many origins as you need to this
+   * list. In this example, we’re allowing two specific origins: 1) http://localhost:3000 2)
+   * https://my-frontend.example.com
+   * <p>
+   * We also allow GET, POST, PUT, DELETE, OPTIONS, etc., and permit all headers (you can lock this down further if you
+   * want).
    */
   @Bean
   public CorsConfigurationSource corsConfigurationSource() {

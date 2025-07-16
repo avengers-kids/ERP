@@ -1,15 +1,19 @@
 package com.erp.erp.domain.model.user;
 
+import com.erp.erp.domain.model.client.Store;
 import com.erp.erp.domain.model.shared.AbstractEntity;
 import jakarta.persistence.Column;
 import jakarta.persistence.Entity;
 import jakarta.persistence.GeneratedValue;
 import jakarta.persistence.GenerationType;
 import jakarta.persistence.Id;
+import jakarta.persistence.ManyToMany;
 import jakarta.persistence.Table;
 import jakarta.persistence.TableGenerator;
 import jakarta.validation.constraints.NotNull;
 import java.time.LocalDate;
+import java.util.HashSet;
+import java.util.Set;
 import lombok.AccessLevel;
 import lombok.AllArgsConstructor;
 import lombok.Builder;
@@ -38,6 +42,9 @@ public class User extends AbstractEntity {
     @Column(name = "USER_ID", nullable = false)
     private long userId;
 
+    @ManyToMany(mappedBy = "users")
+    private Set<Store> stores = new HashSet<>();
+
     @Column(name = "LEGAL_NAME", nullable = false)
     @NotNull(message = "User name cannot be empty")
     private String legalName;
@@ -54,10 +61,6 @@ public class User extends AbstractEntity {
     @NotNull(message = "clientId cannot be empty")
     private Long clientId;
 
-    @Column(name = "STORE_NAME", nullable = false)
-    @NotNull(message = "Store name cannot be empty")
-    private String storeName;
-
     @Column(name = "DATE_OF_BIRTH")
     private LocalDate dateOfBirth;
 
@@ -68,7 +71,7 @@ public class User extends AbstractEntity {
     @Column(name = "USER_PHONE_NUMBER", length = 20)
     private String userPhoneNumber;
 
-    @Column(name = "USER_ROLES", length = 20)
+    @Column(name = "USER_ROLES", length = 200)
     private String userRoles;
 
     @Column(name = "IS_DELETED", length = 1)

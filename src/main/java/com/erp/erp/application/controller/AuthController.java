@@ -2,10 +2,12 @@ package com.erp.erp.application.controller;
 
 import com.erp.erp.application.dto.ClientSignupRequest;
 import com.erp.erp.application.dto.LoginRequest;
+import com.erp.erp.application.dto.NewStoreRequest;
 import com.erp.erp.application.dto.UserSignupRequest;
 import com.erp.erp.application.dto.response.APIResponse;
 import com.erp.erp.application.login.AuthService;
 import com.erp.erp.application.login.UserTokenService;
+import com.erp.erp.domain.model.client.Store;
 import com.erp.erp.infrastructure.component.JwtUtil;
 import java.security.Principal;
 import java.util.Date;
@@ -70,6 +72,12 @@ public class AuthController {
       return ResponseEntity.status(status).body("Email is invalid or account already exists!");
     }
     return ResponseEntity.status(status).body("Account created.");
+  }
+
+  @PostMapping("/store/signup")
+  public ResponseEntity<?> storeSignUp(@RequestBody NewStoreRequest newStoreRequest) {
+    Store store = authService.createStore(newStoreRequest);
+    return ResponseEntity.ok(store);
   }
 
   @PostMapping("/login")

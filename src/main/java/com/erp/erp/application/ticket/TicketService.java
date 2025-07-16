@@ -36,6 +36,6 @@ public interface TicketService {
 
   List<Ticket> checkoutForSellCart(String userEmail, InvoiceDto invoiceDto);
 
-  List<TicketStatusCount> getTicketCountsByStatus();
+  List<TicketStatusCount> getTicketCountsByStatus(String username);
 
 }

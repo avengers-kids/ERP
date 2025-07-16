@@ -21,7 +21,7 @@ public class UserSignupRequest {
   private String password;
   @NotNull
   private String legalName;
-  @NotNull
-  private String storeName;
   private LocalDate dateOfBirth;
+  @NotNull
+  private String userStoreIds;
 }

@@ -1,6 +1,7 @@
 package com.erp.erp.application.dto;
 
 import java.time.LocalDate;
+import java.util.Map;
 import lombok.Builder;
 
 /**
@@ -11,10 +12,10 @@ public record AccountInfoDto(
     String legalName,
     String userName,
     String phoneNumber,
-    String storeName,
     LocalDate dateOfBirth,
     String userEmail,
-    String userRoles
+    String userRoles,
+    Map<Long, String> stores
 ) {
 
   @Override

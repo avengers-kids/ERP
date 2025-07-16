@@ -2,16 +2,25 @@ package com.erp.erp.application.login;
 
 import com.erp.erp.application.dto.AccountInfoDto;
 import com.erp.erp.application.dto.ClientSignupRequest;
+import com.erp.erp.application.dto.NewStoreRequest;
 import com.erp.erp.application.dto.UserSignupRequest;
 import com.erp.erp.application.dto.response.APIResponse;
 import com.erp.erp.application.dto.response.LogInResponse;
 import com.erp.erp.domain.model.client.Client;
 import com.erp.erp.domain.model.client.ClientRepository;
+import com.erp.erp.domain.model.client.Store;
+import com.erp.erp.domain.model.client.StoreRepository;
 import com.erp.erp.domain.model.user.User;
 import com.erp.erp.domain.model.user.UserRepository;
 import com.erp.erp.infrastructure.component.JwtUtil;
+import jakarta.persistence.EntityNotFoundException;
+import java.util.Arrays;
 import java.util.Date;
+import java.util.HashSet;
+import java.util.List;
+import java.util.Map;
 import java.util.Optional;
+import java.util.stream.Collectors;
 import lombok.RequiredArgsConstructor;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.http.HttpStatus;
@@ -21,6 +30,7 @@ import org.springframework.security.core.userdetails.UserDetailsService;
 import org.springframework.security.core.userdetails.UsernameNotFoundException;
 import org.springframework.security.crypto.password.PasswordEncoder;
 import org.springframework.stereotype.Service;
+import org.springframework.transaction.annotation.Transactional;
 
 @Service
 @RequiredArgsConstructor(onConstructor = @__(@Autowired))
@@ -32,6 +42,7 @@ public class AuthService implements UserDetailsService {
   private final PasswordEncoder passwordEncoder;
   private final JwtUtil jwtUtil;
   private final UserTokenService userTokenService;
+  private final StoreRepository storeRepository;
 
   public HttpStatus createNewUser(UserSignupRequest userSignupRequest) {
     Optional<User> userOpt = userRepository.findByUserEmail(userSignupRequest.getUserEmail());
@@ -45,8 +56,32 @@ public class AuthService implements UserDetailsService {
     }
   }
 
+  @Transactional
+  public Store createStore(NewStoreRequest request) {
+    Client client = clientRepository.findById(request.getClientId())
+        .orElseThrow(() -> new EntityNotFoundException(
+            "Client not found: " + request.getClientId()));
+
+    Store store = Store.builder()
+        .client(client)
+        .name(request.getName())
+        .address(request.getAddress())
+        .build();
+    return storeRepository.save(store);
+  }
+
   private User createUser(UserSignupRequest userSignupRequest) {
     String encodedPassword = passwordEncoder.encode(userSignupRequest.getPassword());
+    List<Long> storeIds = Arrays.stream(userSignupRequest.getUserStoreIds().split(","))
+        .map(String::trim)
+        .filter(s -> !s.isEmpty())
+        .map(Long::valueOf)
+        .distinct()
+        .toList();
+    List<Store> stores = storeRepository.findAllById(storeIds);
+    if (stores.size() != storeIds.size()) {
+      throw new EntityNotFoundException("Some store IDs not found");
+    }
     User newUser = User.builder()
         .userName(userSignupRequest.getUserEmail())
         .userEmail(userSignupRequest.getUserEmail())
@@ -55,10 +90,17 @@ public class AuthService implements UserDetailsService {
         .userPhoneNumber(userSignupRequest.getUserPhoneNumber())
         .userRoles(userSignupRequest.getUserRoles())
         .legalName(userSignupRequest.getLegalName())
-        .storeName(userSignupRequest.getStoreName())
         .dateOfBirth(userSignupRequest.getDateOfBirth())
+        .stores(new HashSet<>(stores))
         .build();
     userRepository.save(newUser);
+
+    for (Store store : stores) {
+      store.getUsers().add(newUser);
+    }
+
+    // 3) save stores (because Store is the owning side)
+    storeRepository.saveAll(stores);
     return newUser;
   }
 
@@ -164,16 +206,20 @@ public class AuthService implements UserDetailsService {
     }
     else {
       User user = userOpt.get();
-      AccountInfoDto accountInfoDto = AccountInfoDto.builder()
+      Map<Long, String> storesMap = user.getStores().stream()
+          .collect(Collectors.toMap(
+              Store::getId,
+              Store::getName
+          ));
+      return AccountInfoDto.builder()
           .legalName(user.getLegalName())
           .userName(user.getUserName())
           .phoneNumber(user.getUserPhoneNumber())
-          .storeName(user.getStoreName())
+          .stores(storesMap)
           .dateOfBirth(user.getDateOfBirth())
           .userEmail(userEmail)
           .userRoles(user.getUserRoles())
           .build();
-      return accountInfoDto;
     }
   }
 

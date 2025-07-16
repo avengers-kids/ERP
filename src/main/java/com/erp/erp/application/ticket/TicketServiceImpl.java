@@ -6,6 +6,7 @@ import com.erp.erp.application.dto.TicketDto;
 import com.erp.erp.application.dto.TicketStatusCount;
 import com.erp.erp.application.item.CartService;
 import com.erp.erp.domain.enums.TicketStatus;
+import com.erp.erp.domain.model.client.Store;
 import com.erp.erp.domain.model.item.Cart;
 import com.erp.erp.domain.model.item.CartItem;
 import com.erp.erp.domain.model.item.CartItemDetail;
@@ -17,6 +18,7 @@ import com.erp.erp.domain.model.ticket.TicketRepository;
 import com.erp.erp.domain.model.user.User;
 import com.erp.erp.domain.model.user.UserRepository;
 import com.erp.erp.infrastructure.utility.DateTimeFormatterUtil;
+import jakarta.persistence.EntityNotFoundException;
 import jakarta.persistence.criteria.Expression;
 import jakarta.persistence.criteria.Path;
 import jakarta.persistence.criteria.Predicate;
@@ -32,6 +34,7 @@ import java.util.Map;
 import java.util.Optional;
 import java.util.Set;
 import java.util.UUID;
+import java.util.stream.Collectors;
 import lombok.RequiredArgsConstructor;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.data.jpa.domain.Specification;
@@ -190,7 +193,16 @@ public class TicketServiceImpl implements TicketService {
 
   @Override
   public List<Ticket> searchTickets(TicketStatus status, String email) {
-    return ticketRepository.findByTicketStatusAndUserEmail(status, email);
+    Optional<User> user = userRepository.findByUserEmail(email);
+    if (user.isEmpty()) {
+      throw new EntityNotFoundException("No user found with this user email");
+    }
+    Set<Long> storeIds = user
+        .get().getStores()
+        .stream()
+        .map(Store::getId)
+        .collect(Collectors.toSet());
+    return ticketRepository.findByTicketStatusAndStore_IdIn(status, storeIds);
   }
 
   @Override
@@ -268,7 +280,16 @@ public class TicketServiceImpl implements TicketService {
       Map<String, String> allParams,
       String username
   ) {
-    Specification<Ticket> spec = buildSpecification(allParams, username);
+    Optional<User> user = userRepository.findByUserEmail(username);
+    if (user.isEmpty()) {
+      throw new EntityNotFoundException("No user found with this user email");
+    }
+    Set<Long> storeIds = user
+        .get().getStores()
+        .stream()
+        .map(Store::getId)
+        .collect(Collectors.toSet());
+    Specification<Ticket> spec = buildSpecification(allParams, storeIds);
     return ticketRepository.findAll(spec);
   }
 
@@ -277,7 +298,16 @@ public class TicketServiceImpl implements TicketService {
       Map<String, String> allParams,
       String username
   ) {
-    Specification<Ticket> baseSpec = buildSpecification(allParams, username);
+    Optional<User> user = userRepository.findByUserEmail(username);
+    if (user.isEmpty()) {
+      throw new EntityNotFoundException("No user found with this user email");
+    }
+    Set<Long> storeIds = user
+        .get().getStores()
+        .stream()
+        .map(Store::getId)
+        .collect(Collectors.toSet());
+    Specification<Ticket> baseSpec = buildSpecification(allParams, storeIds);
     Specification<Ticket> notSoldSpec =
         (root, cq, cb) -> cb.notEqual(root.get("ticketStatus"), TicketStatus.SOLD);
     Specification<Ticket> combined = Specification.where(baseSpec)
@@ -287,7 +317,7 @@ public class TicketServiceImpl implements TicketService {
 
   private Specification<Ticket> buildSpecification(
       Map<String, String> allParams,
-      String username
+      Set<Long> storeIds
   ) {
     Set<String> CONTAINS_FIELDS = Set.of(
         "ramRomSpecs",
@@ -304,7 +334,11 @@ public class TicketServiceImpl implements TicketService {
     return (root, cq, cb) -> {
       List<Predicate> preds = new ArrayList<>();
 
-      preds.add(cb.equal(root.get("userEmail"), username));
+      preds.add(root
+          .get("store")
+          .get("id")
+          .in(storeIds)
+      );
 
       if (fromDateStr != null || toDateStr != null) {
         Path<LocalDate> datePath = root.get("invoiceDate");
@@ -461,7 +495,14 @@ public class TicketServiceImpl implements TicketService {
               LocalDateTime.now()) +
               ".\nComment added by " + user.getUserEmail() + " : " + cart.getComment();
     }
+    Optional<Store> matchingStore = user.getStores().stream()
+        .filter(s -> s.getId().equals(invoiceDto.storeId()))
+        .findFirst();
+    if (matchingStore.isEmpty()) {
+      throw new IllegalArgumentException("No store found with your ID for " + user.getUserEmail());
+    }
     Ticket newTicket = Ticket.builder()
+        .store(matchingStore.get())
         .userEmail(user.getUserEmail())
         .clientId(user.getClientId())
         .ticketStatus(newStatus)
@@ -506,8 +547,12 @@ public class TicketServiceImpl implements TicketService {
   }
 
   @Override
-  public List<TicketStatusCount> getTicketCountsByStatus() {
-    return ticketRepository.countTicketsByStatus();
+  public List<TicketStatusCount> getTicketCountsByStatus(String username) {
+    Optional<User> user = userRepository.findByUserEmail(username);
+    if (user.isEmpty()) {
+      throw new EntityNotFoundException("No user with this user name");
+    }
+    return ticketRepository.countTicketsByStatus(user.get().getStores());
   }
 
 

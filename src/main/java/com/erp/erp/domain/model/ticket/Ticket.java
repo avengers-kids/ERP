@@ -2,6 +2,7 @@ package com.erp.erp.domain.model.ticket;
 
 import com.erp.erp.domain.enums.PaymentMode;
 import com.erp.erp.domain.enums.TicketStatus;
+import com.erp.erp.domain.model.client.Store;
 import com.erp.erp.domain.model.payment.Payment;
 import com.erp.erp.domain.model.shared.AbstractEntity;
 import jakarta.persistence.CascadeType;
@@ -9,9 +10,12 @@ import jakarta.persistence.Column;
 import jakarta.persistence.Entity;
 import jakarta.persistence.EnumType;
 import jakarta.persistence.Enumerated;
+import jakarta.persistence.FetchType;
 import jakarta.persistence.GeneratedValue;
 import jakarta.persistence.GenerationType;
 import jakarta.persistence.Id;
+import jakarta.persistence.JoinColumn;
+import jakarta.persistence.ManyToOne;
 import jakarta.persistence.OneToMany;
 import jakarta.persistence.Table;
 import jakarta.persistence.TableGenerator;
@@ -156,6 +160,12 @@ public class Ticket extends AbstractEntity {
       orphanRemoval = true
   )
   private List<Payment> payments = new ArrayList<>();
+
+  @ManyToOne(fetch =
+      FetchType.LAZY, optional = false)
+  @JoinColumn(name = "STORE_ID")
+  @NotNull
+  private Store store;
 
   public BigDecimal totalPaid() {
     return payments.stream()

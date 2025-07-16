@@ -15,7 +15,8 @@ public record InvoiceDto(
     String gstId,
     String productPurchaseType,
     PaymentMode modeOfPayment,
-    Long customerAadharId
+    Long customerAadharId,
+    Long storeId
 
 ) {
 

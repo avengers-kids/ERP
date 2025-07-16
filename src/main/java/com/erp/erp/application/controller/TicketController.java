@@ -132,13 +132,6 @@ public class TicketController {
     return ResponseEntity.ok(ticketService.findInventoryTicketBySpecification(allParams, username));
   }
 
-  @GetMapping("/my-account")
-  @PreAuthorize("hasAnyRole('USER','ADMIN','MANAGER')")
-  public ResponseEntity<AccountInfoDto> fetchAccountInfo(
-      @AuthenticationPrincipal(expression = "username") String username) {
-    return ResponseEntity.ok(authService.fetchUserInfo(username));
-  }
-
   @PostMapping("/cart/items/add")
   @PreAuthorize("hasAnyRole('USER','ADMIN','MANAGER')")
   public ResponseEntity<String> addItem(
@@ -238,7 +231,7 @@ public class TicketController {
       @AuthenticationPrincipal(expression = "username") String username) {
     List<TicketStatusCount> ticketStatusCounts;
     try {
-      ticketStatusCounts = ticketService.getTicketCountsByStatus();
+      ticketStatusCounts = ticketService.getTicketCountsByStatus(username);
     }
     catch (Exception e) {
       return ResponseEntity.internalServerError().body(e.getMessage());
