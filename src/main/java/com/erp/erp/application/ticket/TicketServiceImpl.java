@@ -3,6 +3,7 @@ package com.erp.erp.application.ticket;
 import com.erp.erp.application.dto.BillDto;
 import com.erp.erp.application.dto.InvoiceDto;
 import com.erp.erp.application.dto.TicketDto;
+import com.erp.erp.application.dto.TicketStatusCount;
 import com.erp.erp.application.item.CartService;
 import com.erp.erp.domain.enums.TicketStatus;
 import com.erp.erp.domain.model.item.Cart;
@@ -426,6 +427,25 @@ public class TicketServiceImpl implements TicketService {
     return saved;
   }
 
+  @Override
+  @Transactional
+  public List<Ticket> checkoutForSellCart(String userEmail, InvoiceDto invoiceDto) {
+    Optional<User> user = userRepository.findByUserEmail(userEmail);
+    if (user.isEmpty()) {
+      throw new UsernameNotFoundException("No user found for user " + userEmail);
+    }
+    Cart cart = cartService.getOrCreateBuyCart(userEmail);
+    List<Ticket> tickets = new ArrayList<>();
+    for (CartItem item : cart.getItems()) {
+      for (CartItemDetail detail : item.getDetails()) {
+        tickets.add(createTicketForNewPurchase(detail, item, invoiceDto, user.get()));
+      }
+    }
+    List<Ticket> saved = ticketRepository.saveAll(tickets);
+    cartService.clearCart(cart);
+    return saved;
+  }
+
   private Ticket createTicketForNewPurchase(CartItemDetail cart, CartItem item, InvoiceDto invoiceDto, User user) {
     TicketStatus newStatus;
     if (cart.getSealedFlag().equalsIgnoreCase("Y")) {
@@ -483,6 +503,11 @@ public class TicketServiceImpl implements TicketService {
         .build();
     newTicket.getLifecycles().add(ticketLifecycle);
     return newTicket;
+  }
+
+  @Override
+  public List<TicketStatusCount> getTicketCountsByStatus() {
+    return ticketRepository.countTicketsByStatus();
   }
 
 

@@ -3,6 +3,7 @@ package com.erp.erp.application.ticket;
 import com.erp.erp.application.dto.BillDto;
 import com.erp.erp.application.dto.InvoiceDto;
 import com.erp.erp.application.dto.TicketDto;
+import com.erp.erp.application.dto.TicketStatusCount;
 import com.erp.erp.domain.enums.TicketStatus;
 import com.erp.erp.domain.model.ticket.Ticket;
 import java.math.BigDecimal;
@@ -32,5 +33,9 @@ public interface TicketService {
   Ticket checkTicket(Long ticketId);
 
   List<Ticket> checkoutForBuyCart(String userEmail, InvoiceDto invoiceDto);
+
+  List<Ticket> checkoutForSellCart(String userEmail, InvoiceDto invoiceDto);
+
+  List<TicketStatusCount> getTicketCountsByStatus();
 
 }

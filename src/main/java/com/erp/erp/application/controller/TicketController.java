@@ -7,6 +7,7 @@ import com.erp.erp.application.dto.CartItemDTO;
 import com.erp.erp.application.dto.InvoiceDto;
 import com.erp.erp.application.dto.StatusUpdateRequest;
 import com.erp.erp.application.dto.TicketDto;
+import com.erp.erp.application.dto.TicketStatusCount;
 import com.erp.erp.application.item.CartService;
 import com.erp.erp.application.login.AuthService;
 import com.erp.erp.application.ticket.TicketService;
@@ -20,6 +21,7 @@ import java.util.ArrayList;
 import java.util.List;
 import java.util.Map;
 import java.util.Objects;
+import java.util.stream.Collectors;
 import org.springframework.data.domain.Page;
 import org.springframework.data.domain.Pageable;
 import org.springframework.data.web.PageableDefault;
@@ -199,7 +201,7 @@ public class TicketController {
   @PreAuthorize("hasAnyRole('USER','ADMIN','MANAGER')")
   public ResponseEntity<String> sellCheckout(
       @AuthenticationPrincipal(expression = "username") String username, @RequestBody InvoiceDto invoiceDto) {
-    ticketService.checkoutForBuyCart(username, invoiceDto);
+    ticketService.checkoutForSellCart(username, invoiceDto);
     return ResponseEntity.ok().build();
   }
 
@@ -218,7 +220,7 @@ public class TicketController {
 
   @GetMapping("/cart/items")
   @PreAuthorize("hasAnyRole('USER','ADMIN','MANAGER')")
-  public ResponseEntity<Page<CartItemDTO>> getCartItemss(
+  public ResponseEntity<Page<CartItemDTO>> getCartItems(
       @AuthenticationPrincipal(expression = "username") String username, @RequestParam("cartType") String cartType,
       @PageableDefault(size = 1) Pageable pageable, PagedResourcesAssembler<CartItem> assembler) {
     if (Objects.equals(cartType, "BUY")) {
@@ -227,6 +229,30 @@ public class TicketController {
       return ResponseEntity.ok(cartService.getSellCartAsPage(username, pageable));
     } else {
       return ResponseEntity.internalServerError().body(Page.empty(pageable));
+    }
+  }
+
+  @GetMapping("/search-ticket/all-status/count")
+  @PreAuthorize("hasAnyRole('USER','ADMIN','MANAGER')")
+  public ResponseEntity<?> fetchAllStatusCount(
+      @AuthenticationPrincipal(expression = "username") String username) {
+    List<TicketStatusCount> ticketStatusCounts;
+    try {
+      ticketStatusCounts = ticketService.getTicketCountsByStatus();
+    }
+    catch (Exception e) {
+      return ResponseEntity.internalServerError().body(e.getMessage());
+    }
+    Map<String,Long> countMap = ticketStatusCounts.stream()
+        .collect(Collectors.toMap(
+            c -> c.getStatus().name(),
+            TicketStatusCount::getCount
+        ));
+    if (ticketStatusCounts == null) {
+      return ResponseEntity.noContent().build();
+    }
+    else {
+      return ResponseEntity.ok(countMap);
     }
   }
 
