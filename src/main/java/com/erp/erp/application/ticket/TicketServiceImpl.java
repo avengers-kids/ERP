@@ -156,35 +156,35 @@ public class TicketServiceImpl implements TicketService {
     ticketRepository.save(ticket);
   }
 
-  public void createBillAndMoveToSold(Long ticketId, BillDto billDto) {
-    Ticket ticket = ticketRepository.findById(ticketId)
-        .orElseThrow(() -> new IllegalArgumentException("Ticket not found : " + ticketId));
-    if (ticket.getTicketStatus() == TicketStatus.SOLD) {
-      throw new IllegalArgumentException("Product already sold : " + ticketId);
-    } else if (ticket.getTicketStatus() != TicketStatus.LISTED) {
-      throw new IllegalArgumentException("Product need to be on Listed Status to be sold : " + ticketId);
-    } else if (ticket.getIsDeleted().equalsIgnoreCase("Y")) {
-      throw new IllegalArgumentException("This ticket is deleted : " + ticketId);
-    } else {
-      ticket.setTicketStatus(TicketStatus.SOLD);
-      SoldStatus soldStatus = SoldStatus.builder()
-          .ticketId(ticketId)
-          .clientId(ticket.getClientId())
-          .phoneNumber(billDto.phoneNumber())
-          .customerName(billDto.customerName())
-          .phoneNumber(billDto.phoneNumber())
-          .gstId(billDto.gstId())
-          .onlineTrxId(billDto.onlineTrxId())
-          .modeOfPayment(billDto.modeOfPayment())
-          .placeOfSale(billDto.placeOfSale())
-          .profit(billDto.profit())
-          .billNumber(UUID.randomUUID().toString())
-          .billDate(LocalDate.now())
-          .isDeleted("N")
-          .build();
-      soldStatusRepository.save(soldStatus);
-    }
-  }
+//  public void createBillAndMoveToSold(Long ticketId, BillDto billDto) {
+//    Ticket ticket = ticketRepository.findById(ticketId)
+//        .orElseThrow(() -> new IllegalArgumentException("Ticket not found : " + ticketId));
+//    if (ticket.getTicketStatus() == TicketStatus.SOLD) {
+//      throw new IllegalArgumentException("Product already sold : " + ticketId);
+//    } else if (ticket.getTicketStatus() != TicketStatus.LISTED) {
+//      throw new IllegalArgumentException("Product need to be on Listed Status to be sold : " + ticketId);
+//    } else if (ticket.getIsDeleted().equalsIgnoreCase("Y")) {
+//      throw new IllegalArgumentException("This ticket is deleted : " + ticketId);
+//    } else {
+//      ticket.setTicketStatus(TicketStatus.SOLD);
+//      SoldStatus soldStatus = SoldStatus.builder()
+//          .ticketId(ticketId)
+//          .clientId(ticket.getClientId())
+//          .phoneNumber(billDto.phoneNumber())
+//          .customerName(billDto.customerName())
+//          .phoneNumber(billDto.phoneNumber())
+//          .gstId(billDto.gstId())
+//          .onlineTrxId(billDto.onlineTrxId())
+//          .modeOfPayment(billDto.modeOfPayment())
+//          .placeOfSale(billDto.placeOfSale())
+//          .profit(billDto.profit())
+//          .billNumber(UUID.randomUUID().toString())
+//          .billDate(LocalDate.now())
+//          .isDeleted("N")
+//          .build();
+//      soldStatusRepository.save(soldStatus);
+//    }
+//  }
 
   @Override
   public List<Ticket> searchQC1Data(String email) {
@@ -463,22 +463,52 @@ public class TicketServiceImpl implements TicketService {
 
   @Override
   @Transactional
-  public List<Ticket> checkoutForSellCart(String userEmail, InvoiceDto invoiceDto) {
+  public List<SoldStatus> checkoutSellCart(String userEmail, BillDto billDto) {
     Optional<User> user = userRepository.findByUserEmail(userEmail);
     if (user.isEmpty()) {
       throw new UsernameNotFoundException("No user found for user " + userEmail);
     }
-    Cart cart = cartService.getOrCreateBuyCart(userEmail);
-    List<Ticket> tickets = new ArrayList<>();
-    for (CartItem item : cart.getItems()) {
-      for (CartItemDetail detail : item.getDetails()) {
-        tickets.add(createTicketForNewPurchase(detail, item, invoiceDto, user.get()));
+    Cart sellCart = cartService.getOrCreateSellCart(userEmail);
+
+    List<Long> ticketIds = sellCart.getItems().stream()
+        .map(CartItem::getItemId)
+        .collect(Collectors.toList());
+
+    List<Ticket> tickets = ticketRepository.findAllById(ticketIds);
+    List<SoldStatus> soldStatusList = new ArrayList<>();
+    for (Ticket ticket : tickets) {
+      if (ticket.getTicketStatus() == TicketStatus.SOLD) {
+        throw new IllegalArgumentException("Product already sold : " + ticket.getTicketId());
+      } else if (ticket.getTicketStatus() != TicketStatus.LISTED) {
+        throw new IllegalArgumentException("Product need to be on Listed Status to be sold : " + ticket.getTicketId());
+      } else if (ticket.getIsDeleted().equalsIgnoreCase("Y")) {
+        throw new IllegalArgumentException("This ticket is deleted : " + ticket.getTicketId());
+      } else {
+        ticket.setTicketStatus(TicketStatus.SOLD);
+        SoldStatus soldStatus = SoldStatus.builder()
+            .ticketId(ticket.getTicketId())
+            .clientId(ticket.getClientId())
+            .phoneNumber(billDto.phoneNumber())
+            .customerName(billDto.customerName())
+            .phoneNumber(billDto.phoneNumber())
+            .gstId(billDto.gstId())
+            .onlineTrxId(billDto.onlineTrxId())
+            .modeOfPayment(billDto.modeOfPayment())
+            .placeOfSale(billDto.placeOfSale())
+            .profit(billDto.profit())
+            .billNumber(UUID.randomUUID().toString())
+            .billDate(LocalDate.now())
+            .gstNumber(billDto.gstNumber())
+            .isDeleted("N")
+            .build();
+        soldStatusRepository.save(soldStatus);
       }
     }
-    List<Ticket> saved = ticketRepository.saveAll(tickets);
-    cartService.clearCart(cart);
-    return saved;
+    ticketRepository.saveAll(tickets);
+    cartService.clearCart(sellCart);
+    return soldStatusList;
   }
+
 
   private Ticket createTicketForNewPurchase(CartItemDetail cart, CartItem item, InvoiceDto invoiceDto, User user) {
     TicketStatus newStatus;

@@ -4,7 +4,7 @@ import java.math.BigDecimal;
 import lombok.Data;
 
 @Data
-public class AddItemRequest {
+public class AddBuyItemRequest {
   private Long itemId;
   private Integer quantity = 1;
   private String itemSerialNo;

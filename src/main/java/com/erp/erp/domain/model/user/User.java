@@ -22,7 +22,7 @@ import lombok.NoArgsConstructor;
 
 @Entity
 @Builder
-@Table(name = "WHITELABEL_USER")
+@Table(name = "whitelabel_user")
 @Getter
 @NoArgsConstructor(access = AccessLevel.PROTECTED)
 @AllArgsConstructor

@@ -1,6 +1,6 @@
 package com.erp.erp.application.item;
 
-import com.erp.erp.application.dto.AddItemRequest;
+import com.erp.erp.application.dto.AddBuyItemRequest;
 import com.erp.erp.application.dto.CartItemDTO;
 import com.erp.erp.application.dto.CartItemDetailDTO;
 import com.erp.erp.domain.model.item.Cart;
@@ -9,11 +9,14 @@ import com.erp.erp.domain.model.item.CartItemDetail;
 import com.erp.erp.domain.model.item.CartItemDetailRepository;
 import com.erp.erp.domain.model.item.CartItemRepository;
 import com.erp.erp.domain.model.item.CartRepository;
+import com.erp.erp.domain.model.ticket.TicketRepository;
 import jakarta.persistence.EntityNotFoundException;
 import jakarta.transaction.Transactional;
 import java.util.ArrayList;
 import java.util.List;
 import java.util.Optional;
+import java.util.Set;
+import java.util.stream.Collectors;
 import lombok.RequiredArgsConstructor;
 import org.springframework.data.domain.Page;
 import org.springframework.data.domain.Pageable;
@@ -26,6 +29,7 @@ public class CartService {
   private final CartRepository cartRepo;
   private final CartItemRepository cartItemRepository;
   private final CartItemDetailRepository cartItemDetailRepository;
+  private final TicketRepository ticketRepository;
 
   /** Get buy cart for a user */
   public Page<CartItemDTO> getBuyCartAsPage(String userEmail, Pageable pageable) {
@@ -158,7 +162,7 @@ public class CartService {
 
   /** Add an item (or increment quantity) */
   @Transactional
-  public Cart addBuyItem(String userEmail, AddItemRequest req) {
+  public Cart addBuyItem(String userEmail, AddBuyItemRequest req) {
     Cart cart = getOrCreateBuyCart(userEmail);
 
     CartItem item = cart.getItems().stream()
@@ -199,6 +203,28 @@ public class CartService {
       item.getDetails().add(detail);
     }
     return cartRepo.save(cart);
+  }
+
+  @Transactional
+  public Cart addSellItem(String userEmail, List<Long> ticketIds) {
+    Cart sellCart = getOrCreateSellCart(userEmail);
+
+    Set<Long> existingTicketIds = sellCart.getItems().stream()
+        .map(CartItem::getItemId)
+        .collect(Collectors.toSet());
+
+    for (Long ticketId : ticketIds) {
+      if (!existingTicketIds.contains(ticketId)) {
+        CartItem item = CartItem.builder()
+            .cart(sellCart)
+            .itemId(ticketId)
+            .quantity(1)
+            .details(new ArrayList<>())
+            .build();
+        sellCart.getItems().add(item);
+      }
+    }
+    return cartRepo.save(sellCart);
   }
 
 

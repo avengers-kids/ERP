@@ -5,6 +5,7 @@ import com.erp.erp.application.dto.InvoiceDto;
 import com.erp.erp.application.dto.TicketDto;
 import com.erp.erp.application.dto.TicketStatusCount;
 import com.erp.erp.domain.enums.TicketStatus;
+import com.erp.erp.domain.model.ticket.SoldStatus;
 import com.erp.erp.domain.model.ticket.Ticket;
 import java.math.BigDecimal;
 import java.util.List;
@@ -16,7 +17,7 @@ public interface TicketService {
 
   void updateTicketStatus(Long ticketId, TicketStatus newTicketStatus, String comment, BigDecimal cost);
 
-  void createBillAndMoveToSold(Long ticketId, BillDto billDto);
+//  void createBillAndMoveToSold(Long ticketId, BillDto billDto);
 
   List<Ticket> searchQC1Data(String email);
 
@@ -34,7 +35,7 @@ public interface TicketService {
 
   List<Ticket> checkoutForBuyCart(String userEmail, InvoiceDto invoiceDto);
 
-  List<Ticket> checkoutForSellCart(String userEmail, InvoiceDto invoiceDto);
+  List<SoldStatus> checkoutSellCart(String userEmail, BillDto billDto);
 
   List<TicketStatusCount> getTicketCountsByStatus(String username);
 

@@ -55,6 +55,9 @@ public class SoldStatus extends AbstractEntity {
     @Column(name = "PHONE_NUMBER", nullable = false)
     private String phoneNumber;
 
+    @Column(name = "GST_NUMBER")
+    private String gstNumber;
+
     @Column(name = "GST_ID")
     private String gstId;
 
@@ -78,4 +81,5 @@ public class SoldStatus extends AbstractEntity {
 
     @Column(name = "IS_DELTED", nullable = false, length = 1)
     private String isDeleted;
+
 }

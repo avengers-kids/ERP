@@ -18,7 +18,8 @@ public record BillDto(
     String placeOfSale,
     BigDecimal profit,
     String billNumber,
-    LocalDate billDate
+    LocalDate billDate,
+    String gstNumber
 
 ) {
 

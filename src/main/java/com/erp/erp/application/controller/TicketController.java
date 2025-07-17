@@ -1,12 +1,12 @@
 package com.erp.erp.application.controller;
 
-import com.erp.erp.application.dto.AccountInfoDto;
-import com.erp.erp.application.dto.AddItemRequest;
+import com.erp.erp.application.dto.AddBuyItemRequest;
+import com.erp.erp.application.dto.AddSellItemRequest;
+import com.erp.erp.application.dto.AddTicketsToSellCartRequest;
 import com.erp.erp.application.dto.BillDto;
 import com.erp.erp.application.dto.CartItemDTO;
 import com.erp.erp.application.dto.InvoiceDto;
 import com.erp.erp.application.dto.StatusUpdateRequest;
-import com.erp.erp.application.dto.TicketDto;
 import com.erp.erp.application.dto.TicketStatusCount;
 import com.erp.erp.application.item.CartService;
 import com.erp.erp.application.login.AuthService;
@@ -16,8 +16,6 @@ import com.erp.erp.domain.model.item.Cart;
 import com.erp.erp.domain.model.item.CartItem;
 import com.erp.erp.domain.model.ticket.Ticket;
 import jakarta.validation.Valid;
-import java.security.Principal;
-import java.util.ArrayList;
 import java.util.List;
 import java.util.Map;
 import java.util.Objects;
@@ -26,9 +24,6 @@ import org.springframework.data.domain.Page;
 import org.springframework.data.domain.Pageable;
 import org.springframework.data.web.PageableDefault;
 import org.springframework.data.web.PagedResourcesAssembler;
-import org.springframework.hateoas.EntityModel;
-import org.springframework.hateoas.PagedModel;
-import org.springframework.http.HttpStatus;
 import org.springframework.http.ResponseEntity;
 import org.springframework.security.access.prepost.PreAuthorize;
 import org.springframework.security.core.annotation.AuthenticationPrincipal;
@@ -81,18 +76,18 @@ public class TicketController {
     }
   }
 
-  @PostMapping("/{id}/create-bill")
-  @PreAuthorize("hasAnyRole('USER','ADMIN','MANAGER')")
-  public ResponseEntity<?> createBill(@PathVariable Long id, @RequestBody BillDto billDto) {
-    try {
-      ticketService.createBillAndMoveToSold(id, billDto);
-      return ResponseEntity.ok("Bill Created for Ticket " + id);
-    } catch (IllegalArgumentException ex) {
-      return ResponseEntity.badRequest().body(ex.getMessage());
-    } catch (Exception ex) {
-      return ResponseEntity.internalServerError().body(ex.getMessage());
-    }
-  }
+//  @PostMapping("/{id}/create-bill")
+//  @PreAuthorize("hasAnyRole('USER','ADMIN','MANAGER')")
+//  public ResponseEntity<?> createBill(@PathVariable Long id, @RequestBody BillDto billDto) {
+//    try {
+//      ticketService.createBillAndMoveToSold(id, billDto);
+//      return ResponseEntity.ok("Bill Created for Ticket " + id);
+//    } catch (IllegalArgumentException ex) {
+//      return ResponseEntity.badRequest().body(ex.getMessage());
+//    } catch (Exception ex) {
+//      return ResponseEntity.internalServerError().body(ex.getMessage());
+//    }
+//  }
 
   @GetMapping("/search-ticket/{status}")
   @PreAuthorize("hasAnyRole('USER','ADMIN','MANAGER')")
@@ -132,20 +127,37 @@ public class TicketController {
     return ResponseEntity.ok(ticketService.findInventoryTicketBySpecification(allParams, username));
   }
 
-  @PostMapping("/cart/items/add")
+  @PostMapping("/cart/items/buy/add")
   @PreAuthorize("hasAnyRole('USER','ADMIN','MANAGER')")
-  public ResponseEntity<String> addItem(
+  public ResponseEntity<String> addBuyItem(
       @AuthenticationPrincipal(expression = "username") String username,
-      @RequestBody AddItemRequest req) {
+      @RequestBody AddBuyItemRequest req) {
     Cart updated;
-    if (Objects.equals(req.getCartType(), "BUY")) {
+    if (!Objects.equals(req.getCartType(), "BUY")) {
+      return ResponseEntity.internalServerError().body("Cart Type can be BUY only.");
+    }
+    try {
       updated = cartService.addBuyItem(username, req);
-    } else if (Objects.equals(req.getCartType(), "SELL")) {
-      return ResponseEntity.internalServerError().body("Cart Type can be BUY or SELL only.");
-    } else {
-      return ResponseEntity.internalServerError().body("Cart Type can be BUY or SELL only.");
+    }
+    catch (Exception e) {
+      return ResponseEntity.internalServerError().body(e.getMessage());
     }
     return ResponseEntity.ok("Item added with Cart ID " + updated.getId());
+  }
+
+  @PostMapping("/cart/items/sell/add")
+  @PreAuthorize("hasAnyRole('USER','ADMIN','MANAGER')")
+  public ResponseEntity<String> addSellItem(
+      @AuthenticationPrincipal(expression = "username") String username,
+      @RequestBody AddTicketsToSellCartRequest req) {
+    Cart updated;
+    try {
+      updated = cartService.addSellItem(username, req.getTicketIds());
+    }
+    catch (Exception e) {
+      return ResponseEntity.internalServerError().body(e.getMessage());
+    }
+    return ResponseEntity.ok("Tickets added with Cart ID " + updated.getId());
   }
 
   /**
@@ -193,8 +205,8 @@ public class TicketController {
   @PostMapping("/cart/items/sell/checkout")
   @PreAuthorize("hasAnyRole('USER','ADMIN','MANAGER')")
   public ResponseEntity<String> sellCheckout(
-      @AuthenticationPrincipal(expression = "username") String username, @RequestBody InvoiceDto invoiceDto) {
-    ticketService.checkoutForSellCart(username, invoiceDto);
+      @AuthenticationPrincipal(expression = "username") String username, @RequestBody BillDto billDto) {
+    ticketService.checkoutSellCart(username, billDto);
     return ResponseEntity.ok().build();
   }
 
@@ -215,7 +227,7 @@ public class TicketController {
   @PreAuthorize("hasAnyRole('USER','ADMIN','MANAGER')")
   public ResponseEntity<Page<CartItemDTO>> getCartItems(
       @AuthenticationPrincipal(expression = "username") String username, @RequestParam("cartType") String cartType,
-      @PageableDefault(size = 1) Pageable pageable, PagedResourcesAssembler<CartItem> assembler) {
+      @PageableDefault(size = 10) Pageable pageable) {
     if (Objects.equals(cartType, "BUY")) {
       return ResponseEntity.ok(cartService.getBuyCartAsPage(username, pageable));
     } else if (Objects.equals(cartType, "SELL")) {
@@ -241,7 +253,7 @@ public class TicketController {
             c -> c.getStatus().name(),
             TicketStatusCount::getCount
         ));
-    if (ticketStatusCounts == null) {
+    if (ticketStatusCounts.isEmpty()) {
       return ResponseEntity.noContent().build();
     }
     else {
