@@ -27,9 +27,14 @@ public class UserController {
 
   @GetMapping("/my-account")
   @PreAuthorize("hasAnyRole('USER','ADMIN','MANAGER')")
-  public ResponseEntity<AccountInfoDto> fetchAccountInfo(
+  public ResponseEntity<?> fetchAccountInfo(
       @AuthenticationPrincipal(expression = "username") String username) {
-    return ResponseEntity.ok(authService.fetchUserInfo(username));
+    try {
+      return ResponseEntity.ok(authService.fetchUserInfo(username));
+    }
+    catch (Exception ex) {
+      return ResponseEntity.internalServerError().body(ex.getMessage());
+    }
   }
 
 }

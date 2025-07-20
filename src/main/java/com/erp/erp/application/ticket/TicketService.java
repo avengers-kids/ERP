@@ -4,12 +4,15 @@ import com.erp.erp.application.dto.BillDto;
 import com.erp.erp.application.dto.InvoiceDto;
 import com.erp.erp.application.dto.TicketDto;
 import com.erp.erp.application.dto.TicketStatusCount;
+import com.erp.erp.application.dto.response.TicketResponseDto;
 import com.erp.erp.domain.enums.TicketStatus;
 import com.erp.erp.domain.model.ticket.SoldStatus;
 import com.erp.erp.domain.model.ticket.Ticket;
 import java.math.BigDecimal;
 import java.util.List;
 import java.util.Map;
+import org.springframework.data.domain.Page;
+import org.springframework.data.domain.Pageable;
 
 public interface TicketService {
 
@@ -21,11 +24,11 @@ public interface TicketService {
 
   List<Ticket> searchQC1Data(String email);
 
-  List<Ticket> searchTickets(TicketStatus status, String email);
+  Page<TicketResponseDto> searchTickets(TicketStatus status, String email, Pageable pageable);
 
   List<Ticket> searchTicketsByUserName(String email);
 
-  List<Ticket> findTicketBySpecification(Map<String, String> allParams, String username);
+  Page<TicketResponseDto> findTicketBySpecification(Map<String, String> allParams, String username, Pageable pageable);
 
   List<Ticket> findInventoryTicketBySpecification(Map<String, String> allParams, String username);
 

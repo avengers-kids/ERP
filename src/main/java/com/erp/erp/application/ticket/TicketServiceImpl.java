@@ -4,6 +4,7 @@ import com.erp.erp.application.dto.BillDto;
 import com.erp.erp.application.dto.InvoiceDto;
 import com.erp.erp.application.dto.TicketDto;
 import com.erp.erp.application.dto.TicketStatusCount;
+import com.erp.erp.application.dto.response.TicketResponseDto;
 import com.erp.erp.application.item.CartService;
 import com.erp.erp.domain.enums.TicketStatus;
 import com.erp.erp.domain.model.client.Store;
@@ -37,6 +38,8 @@ import java.util.UUID;
 import java.util.stream.Collectors;
 import lombok.RequiredArgsConstructor;
 import org.springframework.beans.factory.annotation.Autowired;
+import org.springframework.data.domain.Page;
+import org.springframework.data.domain.Pageable;
 import org.springframework.data.jpa.domain.Specification;
 import org.springframework.security.access.AccessDeniedException;
 import org.springframework.security.core.Authentication;
@@ -192,7 +195,7 @@ public class TicketServiceImpl implements TicketService {
   }
 
   @Override
-  public List<Ticket> searchTickets(TicketStatus status, String email) {
+  public Page<TicketResponseDto> searchTickets(TicketStatus status, String email, Pageable pageable) {
     Optional<User> user = userRepository.findByUserEmail(email);
     if (user.isEmpty()) {
       throw new EntityNotFoundException("No user found with this user email");
@@ -202,7 +205,42 @@ public class TicketServiceImpl implements TicketService {
         .stream()
         .map(Store::getId)
         .collect(Collectors.toSet());
-    return ticketRepository.findByTicketStatusAndStore_IdIn(status, storeIds);
+    Page<Ticket> ticketPage = ticketRepository.findByTicketStatusAndStore_IdIn(status, storeIds, pageable);
+    return ticketPage.map(ticket -> TicketResponseDto.builder()
+        .ticketId(ticket.getTicketId())
+        .clientId(ticket.getClientId())
+        .ticketStatus(ticket.getTicketStatus())
+        .invoiceNumber(ticket.getInvoiceNumber())
+        .invoiceDate(ticket.getInvoiceDate())
+        .phoneNumber(ticket.getPhoneNumber())
+        .customerName(ticket.getCustomerName())
+        .gstNumber(ticket.getGstNumber())
+        .gstId(ticket.getGstId())
+        .productPurchaseType(ticket.getProductPurchaseType())
+//        .modeOfPayment(ticket.getModeOfPayment())
+        .acquisitionCost(ticket.getAcquisitionCost())
+        .refurbishedCost(ticket.getRefurbishedCost())
+        .customerAadharId(ticket.getCustomerAadharId())
+        .itemId(ticket.getItemId())
+        .brand(ticket.getBrand())
+        .userEmail(ticket.getUserEmail())
+        .itemSerialNo(ticket.getItemSerialNo())
+        .imeiNo(ticket.getImeiNo())
+        .batteryHealth(ticket.getBatteryHealth())
+        .warranty(ticket.getWarranty())
+        .boxFlag(ticket.getBoxFlag())
+        .chargerFlag(ticket.getChargerFlag())
+        .sealedFlag(ticket.getSealedFlag())
+        .invoiceFlag(ticket.getInvoiceFlag())
+        .ramRomSpecs(ticket.getRamRomSpecs())
+        .colorSpecs(ticket.getColorSpecs())
+        .comment(ticket.getComment())
+        .productName(ticket.getProductName())
+        .isDeleted(ticket.getIsDeleted())
+        .storeId(ticket.getStore() != null ? ticket.getStore().getId() : null)
+        .storeName(ticket.getStore() != null ? ticket.getStore().getName() : null)
+        .build()
+    );
   }
 
   @Override
@@ -276,9 +314,9 @@ public class TicketServiceImpl implements TicketService {
   }
 
   @Override
-  public List<Ticket> findTicketBySpecification(
+  public Page<TicketResponseDto> findTicketBySpecification(
       Map<String, String> allParams,
-      String username
+      String username, Pageable pageable
   ) {
     Optional<User> user = userRepository.findByUserEmail(username);
     if (user.isEmpty()) {
@@ -290,7 +328,42 @@ public class TicketServiceImpl implements TicketService {
         .map(Store::getId)
         .collect(Collectors.toSet());
     Specification<Ticket> spec = buildSpecification(allParams, storeIds);
-    return ticketRepository.findAll(spec);
+    Page<Ticket> ticketPage = ticketRepository.findAll(spec, pageable);
+    return ticketPage.map(ticket -> TicketResponseDto.builder()
+        .ticketId(ticket.getTicketId())
+        .clientId(ticket.getClientId())
+        .ticketStatus(ticket.getTicketStatus())
+        .invoiceNumber(ticket.getInvoiceNumber())
+        .invoiceDate(ticket.getInvoiceDate())
+        .phoneNumber(ticket.getPhoneNumber())
+        .customerName(ticket.getCustomerName())
+        .gstNumber(ticket.getGstNumber())
+        .gstId(ticket.getGstId())
+        .productPurchaseType(ticket.getProductPurchaseType())
+        .modeOfPayment(ticket.getModeOfPayment())
+        .acquisitionCost(ticket.getAcquisitionCost())
+        .refurbishedCost(ticket.getRefurbishedCost())
+        .customerAadharId(ticket.getCustomerAadharId())
+        .itemId(ticket.getItemId())
+        .brand(ticket.getBrand())
+        .userEmail(ticket.getUserEmail())
+        .itemSerialNo(ticket.getItemSerialNo())
+        .imeiNo(ticket.getImeiNo())
+        .batteryHealth(ticket.getBatteryHealth())
+        .warranty(ticket.getWarranty())
+        .boxFlag(ticket.getBoxFlag())
+        .chargerFlag(ticket.getChargerFlag())
+        .sealedFlag(ticket.getSealedFlag())
+        .invoiceFlag(ticket.getInvoiceFlag())
+        .ramRomSpecs(ticket.getRamRomSpecs())
+        .colorSpecs(ticket.getColorSpecs())
+        .comment(ticket.getComment())
+        .productName(ticket.getProductName())
+        .isDeleted(ticket.getIsDeleted())
+        .storeId(ticket.getStore() != null ? ticket.getStore().getId() : null)
+        .storeName(ticket.getStore() != null ? ticket.getStore().getName() : null)
+        .build()
+    );
   }
 
   @Override

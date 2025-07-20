@@ -4,6 +4,7 @@ import com.erp.erp.application.login.AuthService;
 import com.erp.erp.application.login.UserTokenService;
 import com.erp.erp.infrastructure.component.JwtUtil;
 import com.erp.erp.infrastructure.utility.JwtAuthenticationFilter;
+import com.erp.erp.infrastructure.utility.UncaughtExceptionFilter;
 import jakarta.servlet.http.HttpServletResponse;
 import org.springframework.context.annotation.Bean;
 import org.springframework.context.annotation.Configuration;
@@ -73,7 +74,7 @@ public class SecurityConfig {
         // 5) Custom “access denied” and “auth entrypoint” responses
         .exceptionHandling(ex -> ex
             .accessDeniedHandler((req, res, accessDeniedException) -> {
-              res.sendError(HttpServletResponse.SC_UNAUTHORIZED,
+              res.sendError(HttpServletResponse.SC_FORBIDDEN,
                   "You do not have permission to access this resource");
             })
             .authenticationEntryPoint((req, res, authException) -> {
@@ -85,7 +86,9 @@ public class SecurityConfig {
         .requestCache(cache -> cache.requestCache(new NullRequestCache()))
 
         // 7) Register our JWT filter before UsernamePasswordAuthenticationFilter
-        .addFilterBefore(jwtFilter, UsernamePasswordAuthenticationFilter.class);
+        .addFilterBefore(jwtFilter, UsernamePasswordAuthenticationFilter.class)
+        .addFilterAfter(new UncaughtExceptionFilter(), JwtAuthenticationFilter.class);
+    ;
 
     return http.build();
   }

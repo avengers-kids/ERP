@@ -5,6 +5,7 @@ import com.erp.erp.domain.enums.TicketStatus;
 import com.erp.erp.domain.model.client.Store;
 import com.erp.erp.domain.model.payment.Payment;
 import com.erp.erp.domain.model.shared.AbstractEntity;
+import com.fasterxml.jackson.annotation.JsonIgnore;
 import jakarta.persistence.CascadeType;
 import jakarta.persistence.Column;
 import jakarta.persistence.Entity;
@@ -148,6 +149,7 @@ public class Ticket extends AbstractEntity {
       cascade = CascadeType.ALL,
       orphanRemoval = true
   )
+  @JsonIgnore
   @Builder.Default
   private List<TicketLifecycle> lifecycles = new ArrayList<>();
 
@@ -159,6 +161,7 @@ public class Ticket extends AbstractEntity {
       cascade = CascadeType.ALL,
       orphanRemoval = true
   )
+  @JsonIgnore
   private List<Payment> payments = new ArrayList<>();
 
   @ManyToOne(fetch =

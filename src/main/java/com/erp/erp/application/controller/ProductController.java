@@ -25,11 +25,16 @@ public class ProductController {
 
   @GetMapping("/brand/names")
   public ResponseEntity<?> fetchProductByBrand(@RequestParam String brand, @RequestParam(defaultValue = "0") int page) {
-    Page<ProductDto> productDtoPage = productService.getByBrand(brand, page);
-    if (productDtoPage.isEmpty()) {
-      return ResponseEntity.noContent().build();
+    try {
+      Page<ProductDto> productDtoPage = productService.getByBrand(brand, page);
+      if (productDtoPage.isEmpty()) {
+        return ResponseEntity.noContent().build();
+      }
+      return ResponseEntity.ok(productDtoPage);
     }
-    return ResponseEntity.ok(productDtoPage);
+    catch (Exception ex) {
+      return ResponseEntity.internalServerError().body(ex.getMessage());
+    }
   }
 
   @GetMapping("/brand/names/products")
@@ -37,16 +42,26 @@ public class ProductController {
       @RequestParam(value = "brand", required = false) String brand,
       @RequestParam(value = "productName", required = false) String productName,
       @RequestParam(defaultValue = "0") int page) {
-    Page<ProductMaster> productDtoPage = productService.getByProductName(brand, productName, page);
-    if (productDtoPage.isEmpty()) {
-      return ResponseEntity.noContent().build();
+    try {
+      Page<ProductMaster> productDtoPage = productService.getByProductName(brand, productName, page);
+      if (productDtoPage.isEmpty()) {
+        return ResponseEntity.noContent().build();
+      }
+      return ResponseEntity.ok(productDtoPage);
     }
-    return ResponseEntity.ok(productDtoPage);
+    catch (Exception ex) {
+      return ResponseEntity.internalServerError().body(ex.getMessage());
+    }
   }
 
   @GetMapping("/select-specs/{id}")
   public ResponseEntity<?> fetchSpecsByProduct(@PathVariable Long id) {
-    return ResponseEntity.ok(productService.getSpecsByProduct(id));
+    try {
+      return ResponseEntity.ok(productService.getSpecsByProduct(id));
+    }
+    catch (Exception ex) {
+      return ResponseEntity.internalServerError().body(ex.getMessage());
+    }
   }
 
 }

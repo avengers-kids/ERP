@@ -60,24 +60,38 @@ public class AuthController {
 
   @PostMapping("/client/signup")
   public ResponseEntity<String> clientSignUp(@RequestBody ClientSignupRequest clientSignupRequest) {
-    APIResponse clientSignupResponse = authService.createNewClient(clientSignupRequest);
-    return ResponseEntity.status(clientSignupResponse.getStatus()).body(clientSignupResponse.getResponse());
+    try {
+      APIResponse clientSignupResponse = authService.createNewClient(clientSignupRequest);
+      return ResponseEntity.status(clientSignupResponse.getStatus()).body(clientSignupResponse.getResponse());
+    }
+    catch (Exception ex) {
+      return ResponseEntity.internalServerError().body(ex.getMessage());
+    }
   }
 
   @PostMapping("/signup")
   public ResponseEntity<?> userSignUp(@RequestBody UserSignupRequest userSignupRequest) {
-    System.out.println(userSignupRequest.getUserRoles() + userSignupRequest.getUserPhoneNumber());
-    HttpStatus status = authService.createNewUser(userSignupRequest);
-    if (status != HttpStatus.CREATED) {
-      return ResponseEntity.status(status).body("Email is invalid or account already exists!");
+    try {
+      HttpStatus status = authService.createNewUser(userSignupRequest);
+      if (status != HttpStatus.CREATED) {
+        return ResponseEntity.status(status).body("Email is invalid or account already exists!");
+      }
+      return ResponseEntity.status(status).body("Account created.");
     }
-    return ResponseEntity.status(status).body("Account created.");
+    catch (Exception ex) {
+      return ResponseEntity.internalServerError().body(ex.getMessage());
+    }
   }
 
   @PostMapping("/store/signup")
   public ResponseEntity<?> storeSignUp(@RequestBody NewStoreRequest newStoreRequest) {
-    Store store = authService.createStore(newStoreRequest);
-    return ResponseEntity.ok(store);
+    try {
+      Store store = authService.createStore(newStoreRequest);
+      return ResponseEntity.ok(store);
+    }
+    catch (Exception ex) {
+      return ResponseEntity.internalServerError().body(ex.getMessage());
+    }
   }
 
   @PostMapping("/login")
@@ -91,6 +105,9 @@ public class AuthController {
       return ResponseEntity
           .status(HttpStatus.UNAUTHORIZED)
           .body("Invalid username or password");
+    }
+    catch (Exception ex) {
+      return ResponseEntity.internalServerError().body(ex.getMessage());
     }
     UserDetails user = authService.loadUserByUsername(loginRequest.getUserEmail());
     String token = jwtUtil.generateToken(user);
@@ -119,39 +136,51 @@ public class AuthController {
           .status(HttpStatus.BAD_REQUEST)
           .body(ex.getMessage());
     }
+    catch (Exception ex) {
+      return ResponseEntity.internalServerError().body(ex.getMessage());
+    }
     return ResponseEntity.ok("Password changed for " + email);
   }
 
   @GetMapping("/refresh-token")
-  public ResponseEntity<Map<String, String>> refreshToken(
+  public ResponseEntity<?> refreshToken(
       @RequestHeader("Authorization") String authHeader) {
 
-    // 1) Extract the raw token
-    if (authHeader == null || !authHeader.startsWith("Bearer ")) {
-      return ResponseEntity
-          .status(HttpStatus.BAD_REQUEST)
-          .body(Map.of("error", "Missing or invalid Authorization header"));
+    try {
+      if (authHeader == null || !authHeader.startsWith("Bearer ")) {
+        return ResponseEntity
+            .status(HttpStatus.BAD_REQUEST)
+            .body(Map.of("error", "Missing or invalid Authorization header"));
+      }
+      String oldToken = authHeader.substring(7);
+
+      // 2) Delegate to the service
+      String newToken = authService.refreshToken(oldToken);
+
+      // 3) Return the new token
+      return ResponseEntity.ok(Map.of("accessToken", newToken));
     }
-    String oldToken = authHeader.substring(7);
-
-    // 2) Delegate to the service
-    String newToken = authService.refreshToken(oldToken);
-
-    // 3) Return the new token
-    return ResponseEntity.ok(Map.of("accessToken", newToken));
+    catch (Exception ex) {
+      return ResponseEntity.internalServerError().body(ex.getMessage());
+    }
   }
 
   @PostMapping("/logout")
   public ResponseEntity<?> logout(@RequestHeader(HttpHeaders.AUTHORIZATION) String authHeader) {
-    if (authHeader == null || !authHeader.startsWith("Bearer ")) {
-      return ResponseEntity.badRequest().body("Missing or invalid Authorization header");
-    }
-    String token = authHeader.substring(7);
-    String jti = jwtUtil.extractJti(token);
-    String username = jwtUtil.extractUsername(token);
+    try {
+      if (authHeader == null || !authHeader.startsWith("Bearer ")) {
+        return ResponseEntity.badRequest().body("Missing or invalid Authorization header");
+      }
+      String token = authHeader.substring(7);
+      String jti = jwtUtil.extractJti(token);
+      String username = jwtUtil.extractUsername(token);
 
-    userTokenService.revokeToken(username, jti);
-    SecurityContextHolder.clearContext();
-    return ResponseEntity.ok("Logged out successfully");
+      userTokenService.revokeToken(username, jti);
+      SecurityContextHolder.clearContext();
+      return ResponseEntity.ok("Logged out successfully");
+    }
+    catch (Exception ex) {
+      return ResponseEntity.internalServerError().body(ex.getMessage());
+    }
   }
 }

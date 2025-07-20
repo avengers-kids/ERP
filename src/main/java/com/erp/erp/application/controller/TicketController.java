@@ -1,19 +1,18 @@
 package com.erp.erp.application.controller;
 
 import com.erp.erp.application.dto.AddBuyItemRequest;
-import com.erp.erp.application.dto.AddSellItemRequest;
 import com.erp.erp.application.dto.AddTicketsToSellCartRequest;
 import com.erp.erp.application.dto.BillDto;
 import com.erp.erp.application.dto.CartItemDTO;
 import com.erp.erp.application.dto.InvoiceDto;
 import com.erp.erp.application.dto.StatusUpdateRequest;
 import com.erp.erp.application.dto.TicketStatusCount;
+import com.erp.erp.application.dto.response.TicketResponseDto;
 import com.erp.erp.application.item.CartService;
 import com.erp.erp.application.login.AuthService;
 import com.erp.erp.application.ticket.TicketService;
 import com.erp.erp.domain.enums.TicketStatus;
 import com.erp.erp.domain.model.item.Cart;
-import com.erp.erp.domain.model.item.CartItem;
 import com.erp.erp.domain.model.ticket.Ticket;
 import jakarta.validation.Valid;
 import java.util.List;
@@ -23,7 +22,6 @@ import java.util.stream.Collectors;
 import org.springframework.data.domain.Page;
 import org.springframework.data.domain.Pageable;
 import org.springframework.data.web.PageableDefault;
-import org.springframework.data.web.PagedResourcesAssembler;
 import org.springframework.http.ResponseEntity;
 import org.springframework.security.access.prepost.PreAuthorize;
 import org.springframework.security.core.annotation.AuthenticationPrincipal;
@@ -74,6 +72,9 @@ public class TicketController {
     } catch (IllegalArgumentException ex) {
       return ResponseEntity.badRequest().body(ex.getMessage());
     }
+    catch (Exception ex) {
+      return ResponseEntity.internalServerError().body(ex.getMessage());
+    }
   }
 
 //  @PostMapping("/{id}/create-bill")
@@ -92,39 +93,64 @@ public class TicketController {
   @GetMapping("/search-ticket/{status}")
   @PreAuthorize("hasAnyRole('USER','ADMIN','MANAGER')")
   public ResponseEntity<?> searchTickets(@PathVariable TicketStatus status,
-      @AuthenticationPrincipal(expression = "username") String email) {
-    List<Ticket> tickets = ticketService.searchTickets(status, email);
-    return ResponseEntity.ok(tickets);
+      @AuthenticationPrincipal(expression = "username") String email, Pageable pageable) {
+    try {
+      Page<TicketResponseDto> tickets = ticketService.searchTickets(status, email, pageable);
+      return ResponseEntity.ok(tickets);
+    }
+    catch (Exception ex) {
+      return ResponseEntity.internalServerError().body(ex.getMessage());
+    }
   }
 
   @GetMapping("/search-ticket")
   @PreAuthorize("hasAnyRole('USER','ADMIN','MANAGER')")
-  public ResponseEntity<List<Ticket>> searchTicket(
+  public ResponseEntity<?> searchTicket(
       @RequestParam Map<String, String> allParams,
-      @AuthenticationPrincipal(expression = "username") String username
+      @AuthenticationPrincipal(expression = "username") String username, Pageable pageable
   ) {
-    return ResponseEntity.ok(ticketService.findTicketBySpecification(allParams, username));
+    try {
+      return ResponseEntity.ok(ticketService.findTicketBySpecification(allParams, username, pageable));
+    }
+    catch (Exception ex) {
+      return ResponseEntity.internalServerError().body(ex.getMessage());
+    }
   }
 
   @GetMapping("check-ticket/{id}")
   @PreAuthorize("hasAnyRole('USER','ADMIN','MANAGER')")
   public ResponseEntity<?> checkTicket(@PathVariable Long id) {
-    return ResponseEntity.ok(ticketService.checkTicket(id));
+    try {
+      return ResponseEntity.ok(ticketService.checkTicket(id));
+    }
+    catch (Exception ex) {
+      return ResponseEntity.internalServerError().body(ex.getMessage());
+    }
   }
 
   @GetMapping("/check-bill/{id}")
   @PreAuthorize("hasAnyRole('USER','ADMIN','MANAGER')")
   public ResponseEntity<?> checkBill(@PathVariable Long id) {
-    return ResponseEntity.ok(ticketService.checkBill(id));
+    try {
+      return ResponseEntity.ok(ticketService.checkBill(id));
+    }
+    catch (Exception ex) {
+      return ResponseEntity.internalServerError().body(ex.getMessage());
+    }
   }
 
   @GetMapping("/inventory-ticket")
   @PreAuthorize("hasAnyRole('USER','ADMIN','MANAGER')")
-  public ResponseEntity<List<Ticket>> searchInventory(
+  public ResponseEntity<?> searchInventory(
       @RequestParam Map<String, String> allParams,
       @AuthenticationPrincipal(expression = "username") String username
   ) {
-    return ResponseEntity.ok(ticketService.findInventoryTicketBySpecification(allParams, username));
+    try {
+      return ResponseEntity.ok(ticketService.findInventoryTicketBySpecification(allParams, username));
+    }
+    catch (Exception ex) {
+      return ResponseEntity.internalServerError().body(ex.getMessage());
+    }
   }
 
   @PostMapping("/cart/items/buy/add")
@@ -133,9 +159,6 @@ public class TicketController {
       @AuthenticationPrincipal(expression = "username") String username,
       @RequestBody AddBuyItemRequest req) {
     Cart updated;
-    if (!Objects.equals(req.getCartType(), "BUY")) {
-      return ResponseEntity.internalServerError().body("Cart Type can be BUY only.");
-    }
     try {
       updated = cartService.addBuyItem(username, req);
     }
@@ -165,11 +188,16 @@ public class TicketController {
    */
   @DeleteMapping("/cart/items/clear/{cartItemDetailId}")
   @PreAuthorize("hasAnyRole('USER','ADMIN','MANAGER')")
-  public ResponseEntity<Void> deleteItem(
+  public ResponseEntity<?> deleteItem(
       @AuthenticationPrincipal(expression = "username") String username,
       @PathVariable Long cartItemDetailId) {
-    cartService.deleteItem(username, cartItemDetailId);
-    return ResponseEntity.ok().build();
+    try {
+      cartService.deleteItem(username, cartItemDetailId);
+      return ResponseEntity.ok().build();
+    }
+    catch (Exception ex) {
+      return ResponseEntity.internalServerError().body(ex.getMessage());
+    }
   }
 
   /**
@@ -198,16 +226,26 @@ public class TicketController {
   @PreAuthorize("hasAnyRole('USER','ADMIN','MANAGER')")
   public ResponseEntity<String> buyCheckout(
       @AuthenticationPrincipal(expression = "username") String username, @RequestBody InvoiceDto invoiceDto) {
-    ticketService.checkoutForBuyCart(username, invoiceDto);
-    return ResponseEntity.ok().build();
+    try {
+      ticketService.checkoutForBuyCart(username, invoiceDto);
+      return ResponseEntity.ok().build();
+    }
+    catch (Exception ex) {
+      return ResponseEntity.internalServerError().body(ex.getMessage());
+    }
   }
 
   @PostMapping("/cart/items/sell/checkout")
   @PreAuthorize("hasAnyRole('USER','ADMIN','MANAGER')")
   public ResponseEntity<String> sellCheckout(
       @AuthenticationPrincipal(expression = "username") String username, @RequestBody BillDto billDto) {
-    ticketService.checkoutSellCart(username, billDto);
-    return ResponseEntity.ok().build();
+    try {
+      ticketService.checkoutSellCart(username, billDto);
+      return ResponseEntity.ok().build();
+    }
+    catch (Exception ex) {
+      return ResponseEntity.internalServerError().body(ex.getMessage());
+    }
   }
 
 //  @GetMapping("/cart/items/a")
