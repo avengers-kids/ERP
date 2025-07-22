@@ -331,43 +331,7 @@ public class TicketServiceImpl implements TicketService {
         .collect(Collectors.toSet());
     Specification<Ticket> spec = buildSpecification(allParams, storeIds);
     List<Ticket> ticketPage = ticketRepository.findAll(spec);
-    return ticketPage.stream().map(ticket -> TicketResponseDto.builder()
-            .ticketId(ticket.getTicketId())
-            .clientId(ticket.getClientId())
-            .ticketStatus(ticket.getTicketStatus())
-//        .invoiceNumber(ticket.getInvoiceNumber())
-//        .invoiceDate(ticket.getInvoiceDate())
-            .phoneNumber(ticket.getPhoneNumber())
-            .customerName(ticket.getCustomerName())
-//        .gstNumber(ticket.getGstNumber())
-//        .gstId(ticket.getGstId())
-            .productPurchaseType(ticket.getProductPurchaseType())
-            .modeOfPayment(ticket.getModeOfPayment())
-            .acquisitionCost(ticket.getAcquisitionCost())
-            .refurbishedCost(ticket.getRefurbishedCost())
-            .customerAadharId(ticket.getCustomerAadharId())
-            .itemId(ticket.getItemId())
-            .brand(ticket.getBrand())
-            .userEmail(ticket.getUserEmail())
-            .itemSerialNo(ticket.getItemSerialNo())
-            .imeiNo(ticket.getImeiNo())
-            .batteryHealth(ticket.getBatteryHealth())
-            .warranty(ticket.getWarranty())
-            .boxFlag(ticket.getBoxFlag())
-            .chargerFlag(ticket.getChargerFlag())
-            .sealedFlag(ticket.getSealedFlag())
-            .invoiceFlag(ticket.getInvoiceFlag())
-            .ramRomSpecs(ticket.getRamRomSpecs())
-            .colorSpecs(ticket.getColorSpecs())
-            .comment(ticket.getComment())
-            .productName(ticket.getProductName())
-            .isDeleted(ticket.getIsDeleted())
-            .storeId(ticket.getStore() != null ? ticket.getStore().getId() : null)
-            .storeName(ticket.getStore() != null ? ticket.getStore().getName() : null)
-            .invoiceDto(ticket.getInvoice() != null
-                ? InvoiceMapper.toDto(ticket.getInvoice())
-                : null)
-            .build()
+    return ticketPage.stream().map(this::mapToTicketResponseDto
     ).collect(Collectors.toList());
   }
 
@@ -391,43 +355,7 @@ public class TicketServiceImpl implements TicketService {
     Specification<Ticket> combined = Specification.where(baseSpec)
         .and(notSoldSpec);
     List<Ticket> ticketList = ticketRepository.findAll(combined);
-    return ticketList.stream().map(ticket -> TicketResponseDto.builder()
-            .ticketId(ticket.getTicketId())
-            .clientId(ticket.getClientId())
-            .ticketStatus(ticket.getTicketStatus())
-//        .invoiceNumber(ticket.getInvoiceNumber())
-//        .invoiceDate(ticket.getInvoiceDate())
-            .phoneNumber(ticket.getPhoneNumber())
-            .customerName(ticket.getCustomerName())
-//        .gstNumber(ticket.getGstNumber())
-//        .gstId(ticket.getGstId())
-            .productPurchaseType(ticket.getProductPurchaseType())
-            .modeOfPayment(ticket.getModeOfPayment())
-            .acquisitionCost(ticket.getAcquisitionCost())
-            .refurbishedCost(ticket.getRefurbishedCost())
-            .customerAadharId(ticket.getCustomerAadharId())
-            .itemId(ticket.getItemId())
-            .brand(ticket.getBrand())
-            .userEmail(ticket.getUserEmail())
-            .itemSerialNo(ticket.getItemSerialNo())
-            .imeiNo(ticket.getImeiNo())
-            .batteryHealth(ticket.getBatteryHealth())
-            .warranty(ticket.getWarranty())
-            .boxFlag(ticket.getBoxFlag())
-            .chargerFlag(ticket.getChargerFlag())
-            .sealedFlag(ticket.getSealedFlag())
-            .invoiceFlag(ticket.getInvoiceFlag())
-            .ramRomSpecs(ticket.getRamRomSpecs())
-            .colorSpecs(ticket.getColorSpecs())
-            .comment(ticket.getComment())
-            .productName(ticket.getProductName())
-            .isDeleted(ticket.getIsDeleted())
-            .storeId(ticket.getStore() != null ? ticket.getStore().getId() : null)
-            .storeName(ticket.getStore() != null ? ticket.getStore().getName() : null)
-            .invoiceDto(ticket.getInvoice() != null
-            ? InvoiceMapper.toDto(ticket.getInvoice())
-            : null)
-            .build()
+    return ticketList.stream().map(this::mapToTicketResponseDto
     ).collect(Collectors.toList());
   }
 
@@ -557,7 +485,7 @@ public class TicketServiceImpl implements TicketService {
     if (ticket.isEmpty()) {
       throw new IllegalArgumentException("No ticket found.");
     }
-    return ticket.get();
+    return mapToTicketResponseDto(ticket.get());
   }
 
   @Override
