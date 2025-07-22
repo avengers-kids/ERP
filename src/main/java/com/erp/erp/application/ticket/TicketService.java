@@ -35,7 +35,7 @@ public interface TicketService {
 
   BillDto checkBill(Long ticketId);
 
-  Ticket checkTicket(Long ticketId);
+  TicketResponseDto checkTicket(Long ticketId);
 
   InvoiceResponseDto checkoutForBuyCart(String userEmail, InvoiceDto invoiceDto);
 

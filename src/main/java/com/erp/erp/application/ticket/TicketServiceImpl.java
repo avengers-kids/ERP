@@ -210,44 +210,43 @@ public class TicketServiceImpl implements TicketService {
         .map(Store::getId)
         .collect(Collectors.toSet());
     List<Ticket> ticketPage = ticketRepository.findByTicketStatusAndStore_IdIn(status, storeIds);
-    return ticketPage.stream().map(ticket -> TicketResponseDto.builder()
-            .ticketId(ticket.getTicketId())
-            .clientId(ticket.getClientId())
-            .ticketStatus(ticket.getTicketStatus())
-//        .invoiceNumber(ticket.getInvoiceNumber())
-//        .invoiceDate(ticket.getInvoiceDate())
-            .phoneNumber(ticket.getPhoneNumber())
-            .customerName(ticket.getCustomerName())
-//        .gstNumber(ticket.getGstNumber())
-//        .gstId(ticket.getGstId())
-            .productPurchaseType(ticket.getProductPurchaseType())
-//        .modeOfPayment(ticket.getModeOfPayment())
-            .acquisitionCost(ticket.getAcquisitionCost())
-            .refurbishedCost(ticket.getRefurbishedCost())
-            .customerAadharId(ticket.getCustomerAadharId())
-            .itemId(ticket.getItemId())
-            .brand(ticket.getBrand())
-            .userEmail(ticket.getUserEmail())
-            .itemSerialNo(ticket.getItemSerialNo())
-            .imeiNo(ticket.getImeiNo())
-            .batteryHealth(ticket.getBatteryHealth())
-            .warranty(ticket.getWarranty())
-            .boxFlag(ticket.getBoxFlag())
-            .chargerFlag(ticket.getChargerFlag())
-            .sealedFlag(ticket.getSealedFlag())
-            .invoiceFlag(ticket.getInvoiceFlag())
-            .ramRomSpecs(ticket.getRamRomSpecs())
-            .colorSpecs(ticket.getColorSpecs())
-            .comment(ticket.getComment())
-            .productName(ticket.getProductName())
-            .isDeleted(ticket.getIsDeleted())
-            .storeId(ticket.getStore() != null ? ticket.getStore().getId() : null)
-            .storeName(ticket.getStore() != null ? ticket.getStore().getName() : null)
-            .invoiceDto(ticket.getInvoice() != null
-                ? InvoiceMapper.toDto(ticket.getInvoice())
-                : null)
-            .build()
+    return ticketPage.stream().map(this::mapToTicketResponseDto
     ).collect(Collectors.toList());
+  }
+
+  private TicketResponseDto mapToTicketResponseDto(Ticket ticket) {
+    return TicketResponseDto.builder()
+        .ticketId(ticket.getTicketId())
+        .clientId(ticket.getClientId())
+        .ticketStatus(ticket.getTicketStatus())
+        .phoneNumber(ticket.getPhoneNumber())
+        .customerName(ticket.getCustomerName())
+        .productPurchaseType(ticket.getProductPurchaseType())
+        .acquisitionCost(ticket.getAcquisitionCost())
+        .refurbishedCost(ticket.getRefurbishedCost())
+        .customerAadharId(ticket.getCustomerAadharId())
+        .itemId(ticket.getItemId())
+        .brand(ticket.getBrand())
+        .userEmail(ticket.getUserEmail())
+        .itemSerialNo(ticket.getItemSerialNo())
+        .imeiNo(ticket.getImeiNo())
+        .batteryHealth(ticket.getBatteryHealth())
+        .warranty(ticket.getWarranty())
+        .boxFlag(ticket.getBoxFlag())
+        .chargerFlag(ticket.getChargerFlag())
+        .sealedFlag(ticket.getSealedFlag())
+        .invoiceFlag(ticket.getInvoiceFlag())
+        .ramRomSpecs(ticket.getRamRomSpecs())
+        .colorSpecs(ticket.getColorSpecs())
+        .comment(ticket.getComment())
+        .productName(ticket.getProductName())
+        .isDeleted(ticket.getIsDeleted())
+        .storeId(ticket.getStore() != null ? ticket.getStore().getId() : null)
+        .storeName(ticket.getStore() != null ? ticket.getStore().getName() : null)
+        .invoiceDto(ticket.getInvoice() != null
+            ? InvoiceMapper.toDto(ticket.getInvoice())
+            : null)
+        .build();
   }
 
   @Override
@@ -553,7 +552,7 @@ public class TicketServiceImpl implements TicketService {
   }
 
   @Override
-  public Ticket checkTicket(Long ticketId) {
+  public TicketResponseDto checkTicket(Long ticketId) {
     Optional<Ticket> ticket = ticketRepository.findByTicketId(ticketId);
     if (ticket.isEmpty()) {
       throw new IllegalArgumentException("No ticket found.");

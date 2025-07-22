@@ -48,7 +48,7 @@ public class Payment {
   @Column(name = "mode_of_payment", nullable = false)
   private PaymentMode modeOfPayment;
 
-  @Column(name = "transaction_id", length = 100, nullable = false)
+  @Column(name = "transaction_id", length = 100)
   private String transactionId;
 
   @Column(name = "amount", precision = 10, scale = 2, nullable = false)
