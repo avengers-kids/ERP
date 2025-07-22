@@ -4,7 +4,6 @@ import com.erp.erp.domain.enums.PaymentMode;
 import com.erp.erp.domain.enums.TicketStatus;
 import com.erp.erp.domain.model.ticket.Ticket;
 import java.math.BigDecimal;
-import java.time.LocalDate;
 import lombok.Builder;
 import lombok.Data;
 
@@ -15,12 +14,8 @@ public class TicketResponseDto {
   private Long ticketId;
   private Long clientId;
   private TicketStatus ticketStatus;
-  private String invoiceNumber;
-  private LocalDate invoiceDate;
   private String phoneNumber;
   private String customerName;
-  private String gstNumber;
-  private String gstId;
   private String productPurchaseType;
   private PaymentMode modeOfPayment;
   private BigDecimal acquisitionCost;
@@ -44,18 +39,19 @@ public class TicketResponseDto {
   private String isDeleted;
   private Long storeId;
   private String storeName;
+  private InvoiceResponseDto invoiceDto;
 
   public TicketResponseDto mapToDto(Ticket ticket) {
     return TicketResponseDto.builder()
         .ticketId(ticket.getTicketId())
         .clientId(ticket.getClientId())
         .ticketStatus(ticket.getTicketStatus())
-        .invoiceNumber(ticket.getInvoiceNumber())
-        .invoiceDate(ticket.getInvoiceDate())
-        .phoneNumber(ticket.getPhoneNumber())
-        .customerName(ticket.getCustomerName())
-        .gstNumber(ticket.getGstNumber())
-        .gstId(ticket.getGstId())
+//        .invoiceNumber(ticket.getInvoiceNumber())
+//        .invoiceDate(ticket.getInvoiceDate())
+//        .phoneNumber(ticket.getPhoneNumber())
+//        .customerName(ticket.getCustomerName())
+//        .gstNumber(ticket.getGstNumber())
+//        .gstId(ticket.getGstId())
         .productPurchaseType(ticket.getProductPurchaseType())
         .modeOfPayment(ticket.getModeOfPayment())
         .acquisitionCost(ticket.getAcquisitionCost())

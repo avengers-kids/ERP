@@ -31,9 +31,9 @@ public interface TicketRepository extends JpaRepository<Ticket, Long>, JpaSpecif
        """)
   List<TicketStatusCount> countTicketsByStatus(@Param("stores") Collection<Store> stores);
 
-  Page<Ticket> findByTicketStatusAndStore_IdIn(
+  List<Ticket> findByTicketStatusAndStore_IdIn(
       TicketStatus status,
-      Collection<Long> storeIds, Pageable pageable
+      Collection<Long> storeIds
   );
 
   Page<Ticket> findByStoreIn(Collection<Store> stores, Pageable pg);

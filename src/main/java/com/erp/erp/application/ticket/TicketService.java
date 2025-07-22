@@ -4,6 +4,7 @@ import com.erp.erp.application.dto.BillDto;
 import com.erp.erp.application.dto.InvoiceDto;
 import com.erp.erp.application.dto.TicketDto;
 import com.erp.erp.application.dto.TicketStatusCount;
+import com.erp.erp.application.dto.response.InvoiceResponseDto;
 import com.erp.erp.application.dto.response.TicketResponseDto;
 import com.erp.erp.domain.enums.TicketStatus;
 import com.erp.erp.domain.model.ticket.SoldStatus;
@@ -24,19 +25,19 @@ public interface TicketService {
 
   List<Ticket> searchQC1Data(String email);
 
-  Page<TicketResponseDto> searchTickets(TicketStatus status, String email, Pageable pageable);
+  List<TicketResponseDto> searchTickets(TicketStatus status, String email);
 
   List<Ticket> searchTicketsByUserName(String email);
 
-  Page<TicketResponseDto> findTicketBySpecification(Map<String, String> allParams, String username, Pageable pageable);
+  List<TicketResponseDto> findTicketBySpecification(Map<String, String> allParams, String username);
 
-  List<Ticket> findInventoryTicketBySpecification(Map<String, String> allParams, String username);
+  List<TicketResponseDto> findInventoryTicketBySpecification(Map<String, String> allParams, String username);
 
   BillDto checkBill(Long ticketId);
 
   Ticket checkTicket(Long ticketId);
 
-  List<Ticket> checkoutForBuyCart(String userEmail, InvoiceDto invoiceDto);
+  InvoiceResponseDto checkoutForBuyCart(String userEmail, InvoiceDto invoiceDto);
 
   List<SoldStatus> checkoutSellCart(String userEmail, BillDto billDto);
 

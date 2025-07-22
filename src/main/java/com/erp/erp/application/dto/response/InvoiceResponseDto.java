@@ -1,6 +1,10 @@
-package com.erp.erp.application.dto;
+package com.erp.erp.application.dto.response;
 
+import com.erp.erp.application.dto.InvoiceProductDto;
+import com.erp.erp.application.dto.PaymentDto;
 import com.erp.erp.domain.enums.PaymentMode;
+import java.math.BigDecimal;
+import java.time.LocalDate;
 import java.util.List;
 import lombok.Builder;
 
@@ -8,7 +12,8 @@ import lombok.Builder;
  * Data Transfer Object for Invoice Data
  */
 @Builder
-public record InvoiceDto(
+public record InvoiceResponseDto(
+    Long invoiceId,
     String phoneNumber,
     String customerName,
     String gstNumber,
@@ -17,7 +22,11 @@ public record InvoiceDto(
     PaymentMode modeOfPayment,
     Long customerAadharId,
     Long storeId,
-    List<PaymentDto> payments
+    List<PaymentDto> payments,
+    LocalDate invoiceDate,
+    String invoiceNumber,
+    BigDecimal totalAmount,
+    List<InvoiceProductDto> products
 
 ) {
 

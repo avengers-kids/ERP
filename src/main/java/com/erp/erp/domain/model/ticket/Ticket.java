@@ -3,7 +3,7 @@ package com.erp.erp.domain.model.ticket;
 import com.erp.erp.domain.enums.PaymentMode;
 import com.erp.erp.domain.enums.TicketStatus;
 import com.erp.erp.domain.model.client.Store;
-import com.erp.erp.domain.model.payment.Payment;
+import com.erp.erp.domain.model.invoice.Invoice;
 import com.erp.erp.domain.model.shared.AbstractEntity;
 import com.fasterxml.jackson.annotation.JsonIgnore;
 import jakarta.persistence.CascadeType;
@@ -22,7 +22,7 @@ import jakarta.persistence.Table;
 import jakarta.persistence.TableGenerator;
 import jakarta.validation.constraints.NotNull;
 import java.math.BigDecimal;
-import java.time.LocalDate;
+import java.time.LocalDateTime;
 import java.util.ArrayList;
 import java.util.List;
 import lombok.AccessLevel;
@@ -64,23 +64,11 @@ public class Ticket extends AbstractEntity {
   @NotNull
   private TicketStatus ticketStatus;
 
-  @Column(name = "INVOICE_NUMBER", length = 300)
-  private String invoiceNumber;
-
-  @Column(name = "INVOICE_DATE")
-  private LocalDate invoiceDate;
-
   @Column(name = "PHONE_NUMBER", length = 20)
   private String phoneNumber;
 
   @Column(name = "CUSTOMER_NAME", length = 100)
   private String customerName;
-
-  @Column(name = "GST_NUMBER", length = 100)
-  private String gstNumber;
-
-  @Column(name = "GST_ID", length = 100)
-  private String gstId;
 
   @Column(name = "PRODUCT_PURCHASE_TYPE", length = 50)
   private String productPurchaseType;
@@ -156,13 +144,10 @@ public class Ticket extends AbstractEntity {
   @Column(name = "IS_DELETED", length = 1)
   private String isDeleted;
 
-  @OneToMany(
-      mappedBy = "ticket",
-      cascade = CascadeType.ALL,
-      orphanRemoval = true
-  )
-  @JsonIgnore
-  private List<Payment> payments = new ArrayList<>();
+  @ManyToOne(fetch = FetchType.LAZY)
+  @JoinColumn(name = "INVOICE_ID")
+  private Invoice invoice;
+
 
   @ManyToOne(fetch =
       FetchType.LAZY, optional = false)
@@ -170,16 +155,16 @@ public class Ticket extends AbstractEntity {
   @NotNull
   private Store store;
 
-  public BigDecimal totalPaid() {
-    return payments.stream()
-        .map(Payment::getAmount)
-        .reduce(BigDecimal.ZERO, BigDecimal::add);
-  }
+//  public BigDecimal totalPaid() {
+//    return payments.stream()
+//        .map(Payment::getAmount)
+//        .reduce(BigDecimal.ZERO, BigDecimal::add);
+//  }
 
-  public boolean isFullyPaid() {
-    BigDecimal invoiceTotal =
-        acquisitionCost.add(refurbishedCost);
-    return totalPaid().compareTo(invoiceTotal) >= 0;
-  }
+//  public boolean isFullyPaid() {
+//    BigDecimal invoiceTotal =
+//        acquisitionCost.add(refurbishedCost);
+//    return totalPaid().compareTo(invoiceTotal) >= 0;
+//  }
 
 }

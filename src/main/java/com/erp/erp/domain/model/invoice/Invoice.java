@@ -1,0 +1,68 @@
+package com.erp.erp.domain.model.invoice;
+
+import com.erp.erp.domain.model.payment.Payment;
+import com.erp.erp.domain.model.ticket.Ticket;
+import jakarta.persistence.CascadeType;
+import jakarta.persistence.Column;
+import jakarta.persistence.Entity;
+import jakarta.persistence.GeneratedValue;
+import jakarta.persistence.GenerationType;
+import jakarta.persistence.Id;
+import jakarta.persistence.OneToMany;
+import jakarta.persistence.Table;
+import jakarta.persistence.TableGenerator;
+import java.math.BigDecimal;
+import java.time.LocalDate;
+import java.time.LocalDateTime;
+import java.util.List;
+import lombok.AccessLevel;
+import lombok.AllArgsConstructor;
+import lombok.Builder;
+import lombok.Getter;
+import lombok.NoArgsConstructor;
+import lombok.Setter;
+
+@Entity
+@Table(name = "WHITELABEL_INVOICE")
+@Getter
+@Setter
+@NoArgsConstructor(access = AccessLevel.PROTECTED)
+@AllArgsConstructor
+@Builder
+public class Invoice {
+
+  @Id
+  @GeneratedValue(strategy = GenerationType.TABLE, generator = "ticketSeqGen")
+  @TableGenerator(
+      name           = "ticketSeqGen",
+      table          = "global_sequence",
+      pkColumnName   = "seq_name",
+      valueColumnName= "next_val",
+      pkColumnValue  = "ticket_seq",
+      initialValue   = 100000,
+      allocationSize = 1
+  )
+  @Column(name = "INVOICE_ID", nullable = false)
+  private Long id;
+
+  @Column(name = "INVOICE_NUMBER", nullable = false, unique = true, length = 300)
+  private String invoiceNumber;
+
+  @Column(name = "INVOICE_DATE", nullable = false)
+  private LocalDate invoiceDate;
+
+  @Column(name = "TOTAL_AMOUNT", precision = 12, scale = 2, nullable = false)
+  private BigDecimal totalAmount;
+
+  @Column(name = "GST_NUMBER")
+  private String gstNumber;
+
+  @Column(name = "GST_ID")
+  private String gstId;
+
+  @OneToMany(mappedBy = "invoice", cascade = CascadeType.ALL)
+  private List<Ticket> tickets;
+
+  @OneToMany(mappedBy = "invoice", cascade = CascadeType.ALL)
+  private List<Payment> payments;
+}

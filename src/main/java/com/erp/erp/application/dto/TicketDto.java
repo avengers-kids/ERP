@@ -4,6 +4,7 @@ import com.erp.erp.domain.enums.PaymentMode;
 import com.erp.erp.domain.model.ticket.Ticket;
 import java.math.BigDecimal;
 import java.time.LocalDate;
+import java.time.LocalDateTime;
 import lombok.Builder;
 
 /**
@@ -13,7 +14,7 @@ import lombok.Builder;
 public record TicketDto(
     Long itemId,
     String invoiceNumber,
-    LocalDate invoiceDate,
+    LocalDateTime invoiceDate,
     String phoneNumber,
     String customerName,
     String gstNumber,
@@ -60,12 +61,12 @@ public record TicketDto(
   public static TicketDto fromEntity(Ticket ticket) {
     return TicketDto.builder()
         .itemId(ticket.getItemId())
-        .invoiceNumber(ticket.getInvoiceNumber())
-        .invoiceDate(ticket.getInvoiceDate())
+//        .invoiceNumber(ticket.getInvoiceNumber())
+//        .invoiceDate(ticket.getInvoiceDate())
         .phoneNumber(ticket.getPhoneNumber())
         .customerName(ticket.getCustomerName())
-        .gstNumber(ticket.getGstNumber())
-        .gstId(ticket.getGstId())
+//        .gstNumber(ticket.getGstNumber())
+//        .gstId(ticket.getGstId())
         .productPurchaseType(ticket.getProductPurchaseType())
         .modeOfPayment(ticket.getModeOfPayment())
         .customerAadharId(ticket.getCustomerAadharId())

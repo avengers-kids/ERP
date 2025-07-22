@@ -7,13 +7,13 @@ import com.erp.erp.application.dto.CartItemDTO;
 import com.erp.erp.application.dto.InvoiceDto;
 import com.erp.erp.application.dto.StatusUpdateRequest;
 import com.erp.erp.application.dto.TicketStatusCount;
+import com.erp.erp.application.dto.response.InvoiceResponseDto;
 import com.erp.erp.application.dto.response.TicketResponseDto;
 import com.erp.erp.application.item.CartService;
 import com.erp.erp.application.login.AuthService;
 import com.erp.erp.application.ticket.TicketService;
 import com.erp.erp.domain.enums.TicketStatus;
 import com.erp.erp.domain.model.item.Cart;
-import com.erp.erp.domain.model.ticket.Ticket;
 import jakarta.validation.Valid;
 import java.util.List;
 import java.util.Map;
@@ -93,9 +93,9 @@ public class TicketController {
   @GetMapping("/search-ticket/{status}")
   @PreAuthorize("hasAnyRole('USER','ADMIN','MANAGER')")
   public ResponseEntity<?> searchTickets(@PathVariable TicketStatus status,
-      @AuthenticationPrincipal(expression = "username") String email, Pageable pageable) {
+      @AuthenticationPrincipal(expression = "username") String email) {
     try {
-      Page<TicketResponseDto> tickets = ticketService.searchTickets(status, email, pageable);
+      List<TicketResponseDto> tickets = ticketService.searchTickets(status, email);
       return ResponseEntity.ok(tickets);
     }
     catch (Exception ex) {
@@ -107,10 +107,10 @@ public class TicketController {
   @PreAuthorize("hasAnyRole('USER','ADMIN','MANAGER')")
   public ResponseEntity<?> searchTicket(
       @RequestParam Map<String, String> allParams,
-      @AuthenticationPrincipal(expression = "username") String username, Pageable pageable
+      @AuthenticationPrincipal(expression = "username") String username
   ) {
     try {
-      return ResponseEntity.ok(ticketService.findTicketBySpecification(allParams, username, pageable));
+      return ResponseEntity.ok(ticketService.findTicketBySpecification(allParams, username));
     }
     catch (Exception ex) {
       return ResponseEntity.internalServerError().body(ex.getMessage());
@@ -224,11 +224,11 @@ public class TicketController {
    */
   @PostMapping("/cart/items/buy/checkout")
   @PreAuthorize("hasAnyRole('USER','ADMIN','MANAGER')")
-  public ResponseEntity<String> buyCheckout(
+  public ResponseEntity<?> buyCheckout(
       @AuthenticationPrincipal(expression = "username") String username, @RequestBody InvoiceDto invoiceDto) {
     try {
-      ticketService.checkoutForBuyCart(username, invoiceDto);
-      return ResponseEntity.ok().build();
+      InvoiceResponseDto invoiceResponseDto = ticketService.checkoutForBuyCart(username, invoiceDto);
+      return ResponseEntity.ok(invoiceResponseDto);
     }
     catch (Exception ex) {
       return ResponseEntity.internalServerError().body(ex.getMessage());

@@ -2,15 +2,23 @@ package com.erp.erp.application.ticket;
 
 import com.erp.erp.application.dto.BillDto;
 import com.erp.erp.application.dto.InvoiceDto;
+import com.erp.erp.application.dto.InvoiceProductDto;
+import com.erp.erp.application.dto.PaymentDto;
 import com.erp.erp.application.dto.TicketDto;
 import com.erp.erp.application.dto.TicketStatusCount;
+import com.erp.erp.application.dto.response.InvoiceResponseDto;
 import com.erp.erp.application.dto.response.TicketResponseDto;
 import com.erp.erp.application.item.CartService;
 import com.erp.erp.domain.enums.TicketStatus;
 import com.erp.erp.domain.model.client.Store;
+import com.erp.erp.domain.model.invoice.Invoice;
+import com.erp.erp.domain.model.invoice.InvoiceRepository;
 import com.erp.erp.domain.model.item.Cart;
 import com.erp.erp.domain.model.item.CartItem;
 import com.erp.erp.domain.model.item.CartItemDetail;
+import com.erp.erp.domain.model.item.CartRepository;
+import com.erp.erp.domain.model.payment.Payment;
+import com.erp.erp.domain.model.payment.PaymentRepository;
 import com.erp.erp.domain.model.ticket.SoldStatus;
 import com.erp.erp.domain.model.ticket.SoldStatusRepository;
 import com.erp.erp.domain.model.ticket.Ticket;
@@ -19,8 +27,11 @@ import com.erp.erp.domain.model.ticket.TicketRepository;
 import com.erp.erp.domain.model.user.User;
 import com.erp.erp.domain.model.user.UserRepository;
 import com.erp.erp.infrastructure.utility.DateTimeFormatterUtil;
+import com.erp.erp.infrastructure.utility.InvoiceMapper;
 import jakarta.persistence.EntityNotFoundException;
 import jakarta.persistence.criteria.Expression;
+import jakarta.persistence.criteria.Join;
+import jakarta.persistence.criteria.JoinType;
 import jakarta.persistence.criteria.Path;
 import jakarta.persistence.criteria.Predicate;
 import jakarta.persistence.metamodel.EntityType;
@@ -32,14 +43,13 @@ import java.util.ArrayList;
 import java.util.EnumMap;
 import java.util.List;
 import java.util.Map;
+import java.util.Objects;
 import java.util.Optional;
 import java.util.Set;
 import java.util.UUID;
 import java.util.stream.Collectors;
 import lombok.RequiredArgsConstructor;
 import org.springframework.beans.factory.annotation.Autowired;
-import org.springframework.data.domain.Page;
-import org.springframework.data.domain.Pageable;
 import org.springframework.data.jpa.domain.Specification;
 import org.springframework.security.access.AccessDeniedException;
 import org.springframework.security.core.Authentication;
@@ -63,19 +73,20 @@ public class TicketServiceImpl implements TicketService {
   private final SoldStatusRepository soldStatusRepository;
   private final UserRepository userRepository;
   private final CartService cartService;
+  private final InvoiceRepository invoiceRepository;
+  private final PaymentRepository paymentRepository;
+  private final CartRepository cartRepository;
 
   static {
     TRANSITION_ROLE_MAP = new EnumMap<>(TicketStatus.class);
 
-    TRANSITION_ROLE_MAP.put(TicketStatus.QC1, Map.of(
-        TicketStatus.QC2, Set.of(QC1_USER, MANAGER),
+    TRANSITION_ROLE_MAP.put(TicketStatus.QC, Map.of(
         TicketStatus.FACTORY, Set.of(QC1_USER, MANAGER),
         TicketStatus.LISTED, Set.of(QC1_USER, MANAGER),
         TicketStatus.SCRAPED, Set.of(QC1_USER, MANAGER))
     );
     TRANSITION_ROLE_MAP.put(TicketStatus.FACTORY, Map.of(
-        TicketStatus.QC1, Set.of(QC1_USER, MANAGER),
-        TicketStatus.QC2, Set.of(QC2_USER, MANAGER),
+        TicketStatus.QC, Set.of(QC1_USER, MANAGER),
         TicketStatus.LISTED, Set.of(QC2_USER, MANAGER),
         TicketStatus.SCRAPED, Set.of(QC2_USER, MANAGER))
     );
@@ -90,15 +101,8 @@ public class TicketServiceImpl implements TicketService {
 //    );
     TRANSITION_ROLE_MAP.put(TicketStatus.LISTED, Map.of(
         TicketStatus.SCRAPED, Set.of(LISTED_USER, MANAGER),
-        TicketStatus.QC2, Set.of(LISTED_USER, MANAGER),
-        TicketStatus.FACTORY, Set.of(LISTED_USER, MANAGER),
-        TicketStatus.QC1, Set.of(LISTED_USER, MANAGER))
-    );
-
-    TRANSITION_ROLE_MAP.put(TicketStatus.QC2, Map.of(
-        TicketStatus.FACTORY, Set.of(QC2_USER, MANAGER),
-        TicketStatus.LISTED, Set.of(QC2_USER, MANAGER),
-        TicketStatus.SCRAPED, Set.of(QC2_USER, MANAGER))
+        TicketStatus.QC, Set.of(LISTED_USER, MANAGER),
+        TicketStatus.FACTORY, Set.of(LISTED_USER, MANAGER))
     );
 
   }
@@ -191,11 +195,11 @@ public class TicketServiceImpl implements TicketService {
 
   @Override
   public List<Ticket> searchQC1Data(String email) {
-    return ticketRepository.findByTicketStatusAndUserEmail(TicketStatus.QC1, email);
+    return ticketRepository.findByTicketStatusAndUserEmail(TicketStatus.QC, email);
   }
 
   @Override
-  public Page<TicketResponseDto> searchTickets(TicketStatus status, String email, Pageable pageable) {
+  public List<TicketResponseDto> searchTickets(TicketStatus status, String email) {
     Optional<User> user = userRepository.findByUserEmail(email);
     if (user.isEmpty()) {
       throw new EntityNotFoundException("No user found with this user email");
@@ -205,42 +209,45 @@ public class TicketServiceImpl implements TicketService {
         .stream()
         .map(Store::getId)
         .collect(Collectors.toSet());
-    Page<Ticket> ticketPage = ticketRepository.findByTicketStatusAndStore_IdIn(status, storeIds, pageable);
-    return ticketPage.map(ticket -> TicketResponseDto.builder()
-        .ticketId(ticket.getTicketId())
-        .clientId(ticket.getClientId())
-        .ticketStatus(ticket.getTicketStatus())
-        .invoiceNumber(ticket.getInvoiceNumber())
-        .invoiceDate(ticket.getInvoiceDate())
-        .phoneNumber(ticket.getPhoneNumber())
-        .customerName(ticket.getCustomerName())
-        .gstNumber(ticket.getGstNumber())
-        .gstId(ticket.getGstId())
-        .productPurchaseType(ticket.getProductPurchaseType())
+    List<Ticket> ticketPage = ticketRepository.findByTicketStatusAndStore_IdIn(status, storeIds);
+    return ticketPage.stream().map(ticket -> TicketResponseDto.builder()
+            .ticketId(ticket.getTicketId())
+            .clientId(ticket.getClientId())
+            .ticketStatus(ticket.getTicketStatus())
+//        .invoiceNumber(ticket.getInvoiceNumber())
+//        .invoiceDate(ticket.getInvoiceDate())
+            .phoneNumber(ticket.getPhoneNumber())
+            .customerName(ticket.getCustomerName())
+//        .gstNumber(ticket.getGstNumber())
+//        .gstId(ticket.getGstId())
+            .productPurchaseType(ticket.getProductPurchaseType())
 //        .modeOfPayment(ticket.getModeOfPayment())
-        .acquisitionCost(ticket.getAcquisitionCost())
-        .refurbishedCost(ticket.getRefurbishedCost())
-        .customerAadharId(ticket.getCustomerAadharId())
-        .itemId(ticket.getItemId())
-        .brand(ticket.getBrand())
-        .userEmail(ticket.getUserEmail())
-        .itemSerialNo(ticket.getItemSerialNo())
-        .imeiNo(ticket.getImeiNo())
-        .batteryHealth(ticket.getBatteryHealth())
-        .warranty(ticket.getWarranty())
-        .boxFlag(ticket.getBoxFlag())
-        .chargerFlag(ticket.getChargerFlag())
-        .sealedFlag(ticket.getSealedFlag())
-        .invoiceFlag(ticket.getInvoiceFlag())
-        .ramRomSpecs(ticket.getRamRomSpecs())
-        .colorSpecs(ticket.getColorSpecs())
-        .comment(ticket.getComment())
-        .productName(ticket.getProductName())
-        .isDeleted(ticket.getIsDeleted())
-        .storeId(ticket.getStore() != null ? ticket.getStore().getId() : null)
-        .storeName(ticket.getStore() != null ? ticket.getStore().getName() : null)
-        .build()
-    );
+            .acquisitionCost(ticket.getAcquisitionCost())
+            .refurbishedCost(ticket.getRefurbishedCost())
+            .customerAadharId(ticket.getCustomerAadharId())
+            .itemId(ticket.getItemId())
+            .brand(ticket.getBrand())
+            .userEmail(ticket.getUserEmail())
+            .itemSerialNo(ticket.getItemSerialNo())
+            .imeiNo(ticket.getImeiNo())
+            .batteryHealth(ticket.getBatteryHealth())
+            .warranty(ticket.getWarranty())
+            .boxFlag(ticket.getBoxFlag())
+            .chargerFlag(ticket.getChargerFlag())
+            .sealedFlag(ticket.getSealedFlag())
+            .invoiceFlag(ticket.getInvoiceFlag())
+            .ramRomSpecs(ticket.getRamRomSpecs())
+            .colorSpecs(ticket.getColorSpecs())
+            .comment(ticket.getComment())
+            .productName(ticket.getProductName())
+            .isDeleted(ticket.getIsDeleted())
+            .storeId(ticket.getStore() != null ? ticket.getStore().getId() : null)
+            .storeName(ticket.getStore() != null ? ticket.getStore().getName() : null)
+            .invoiceDto(ticket.getInvoice() != null
+                ? InvoiceMapper.toDto(ticket.getInvoice())
+                : null)
+            .build()
+    ).collect(Collectors.toList());
   }
 
   @Override
@@ -257,7 +264,7 @@ public class TicketServiceImpl implements TicketService {
     if (ticketDto.sealedFlag().equalsIgnoreCase("Y")) {
       newStatus = TicketStatus.LISTED;
     } else {
-      newStatus = TicketStatus.QC1;
+      newStatus = TicketStatus.QC;
     }
     UUID invoiceUUID = UUID.randomUUID();
     String comments = null;
@@ -271,12 +278,8 @@ public class TicketServiceImpl implements TicketService {
         .userEmail(email)
         .clientId(user.get().getClientId())
         .ticketStatus(newStatus)
-        .invoiceNumber(invoiceUUID.toString())
-        .invoiceDate(ticketDto.invoiceDate())
         .phoneNumber(ticketDto.phoneNumber())
         .customerName(ticketDto.customerName())
-        .gstNumber(ticketDto.gstNumber())
-        .gstId(ticketDto.gstId())
         .productPurchaseType(ticketDto.productPurchaseType())
         .modeOfPayment(ticketDto.modeOfPayment())
         .customerAadharId(ticketDto.customerAadharId())
@@ -314,9 +317,9 @@ public class TicketServiceImpl implements TicketService {
   }
 
   @Override
-  public Page<TicketResponseDto> findTicketBySpecification(
+  public List<TicketResponseDto> findTicketBySpecification(
       Map<String, String> allParams,
-      String username, Pageable pageable
+      String username
   ) {
     Optional<User> user = userRepository.findByUserEmail(username);
     if (user.isEmpty()) {
@@ -328,46 +331,49 @@ public class TicketServiceImpl implements TicketService {
         .map(Store::getId)
         .collect(Collectors.toSet());
     Specification<Ticket> spec = buildSpecification(allParams, storeIds);
-    Page<Ticket> ticketPage = ticketRepository.findAll(spec, pageable);
-    return ticketPage.map(ticket -> TicketResponseDto.builder()
-        .ticketId(ticket.getTicketId())
-        .clientId(ticket.getClientId())
-        .ticketStatus(ticket.getTicketStatus())
-        .invoiceNumber(ticket.getInvoiceNumber())
-        .invoiceDate(ticket.getInvoiceDate())
-        .phoneNumber(ticket.getPhoneNumber())
-        .customerName(ticket.getCustomerName())
-        .gstNumber(ticket.getGstNumber())
-        .gstId(ticket.getGstId())
-        .productPurchaseType(ticket.getProductPurchaseType())
-        .modeOfPayment(ticket.getModeOfPayment())
-        .acquisitionCost(ticket.getAcquisitionCost())
-        .refurbishedCost(ticket.getRefurbishedCost())
-        .customerAadharId(ticket.getCustomerAadharId())
-        .itemId(ticket.getItemId())
-        .brand(ticket.getBrand())
-        .userEmail(ticket.getUserEmail())
-        .itemSerialNo(ticket.getItemSerialNo())
-        .imeiNo(ticket.getImeiNo())
-        .batteryHealth(ticket.getBatteryHealth())
-        .warranty(ticket.getWarranty())
-        .boxFlag(ticket.getBoxFlag())
-        .chargerFlag(ticket.getChargerFlag())
-        .sealedFlag(ticket.getSealedFlag())
-        .invoiceFlag(ticket.getInvoiceFlag())
-        .ramRomSpecs(ticket.getRamRomSpecs())
-        .colorSpecs(ticket.getColorSpecs())
-        .comment(ticket.getComment())
-        .productName(ticket.getProductName())
-        .isDeleted(ticket.getIsDeleted())
-        .storeId(ticket.getStore() != null ? ticket.getStore().getId() : null)
-        .storeName(ticket.getStore() != null ? ticket.getStore().getName() : null)
-        .build()
-    );
+    List<Ticket> ticketPage = ticketRepository.findAll(spec);
+    return ticketPage.stream().map(ticket -> TicketResponseDto.builder()
+            .ticketId(ticket.getTicketId())
+            .clientId(ticket.getClientId())
+            .ticketStatus(ticket.getTicketStatus())
+//        .invoiceNumber(ticket.getInvoiceNumber())
+//        .invoiceDate(ticket.getInvoiceDate())
+            .phoneNumber(ticket.getPhoneNumber())
+            .customerName(ticket.getCustomerName())
+//        .gstNumber(ticket.getGstNumber())
+//        .gstId(ticket.getGstId())
+            .productPurchaseType(ticket.getProductPurchaseType())
+            .modeOfPayment(ticket.getModeOfPayment())
+            .acquisitionCost(ticket.getAcquisitionCost())
+            .refurbishedCost(ticket.getRefurbishedCost())
+            .customerAadharId(ticket.getCustomerAadharId())
+            .itemId(ticket.getItemId())
+            .brand(ticket.getBrand())
+            .userEmail(ticket.getUserEmail())
+            .itemSerialNo(ticket.getItemSerialNo())
+            .imeiNo(ticket.getImeiNo())
+            .batteryHealth(ticket.getBatteryHealth())
+            .warranty(ticket.getWarranty())
+            .boxFlag(ticket.getBoxFlag())
+            .chargerFlag(ticket.getChargerFlag())
+            .sealedFlag(ticket.getSealedFlag())
+            .invoiceFlag(ticket.getInvoiceFlag())
+            .ramRomSpecs(ticket.getRamRomSpecs())
+            .colorSpecs(ticket.getColorSpecs())
+            .comment(ticket.getComment())
+            .productName(ticket.getProductName())
+            .isDeleted(ticket.getIsDeleted())
+            .storeId(ticket.getStore() != null ? ticket.getStore().getId() : null)
+            .storeName(ticket.getStore() != null ? ticket.getStore().getName() : null)
+            .invoiceDto(ticket.getInvoice() != null
+                ? InvoiceMapper.toDto(ticket.getInvoice())
+                : null)
+            .build()
+    ).collect(Collectors.toList());
   }
 
   @Override
-  public List<Ticket> findInventoryTicketBySpecification(
+  public List<TicketResponseDto> findInventoryTicketBySpecification(
       Map<String, String> allParams,
       String username
   ) {
@@ -385,7 +391,45 @@ public class TicketServiceImpl implements TicketService {
         (root, cq, cb) -> cb.notEqual(root.get("ticketStatus"), TicketStatus.SOLD);
     Specification<Ticket> combined = Specification.where(baseSpec)
         .and(notSoldSpec);
-    return ticketRepository.findAll(combined);
+    List<Ticket> ticketList = ticketRepository.findAll(combined);
+    return ticketList.stream().map(ticket -> TicketResponseDto.builder()
+            .ticketId(ticket.getTicketId())
+            .clientId(ticket.getClientId())
+            .ticketStatus(ticket.getTicketStatus())
+//        .invoiceNumber(ticket.getInvoiceNumber())
+//        .invoiceDate(ticket.getInvoiceDate())
+            .phoneNumber(ticket.getPhoneNumber())
+            .customerName(ticket.getCustomerName())
+//        .gstNumber(ticket.getGstNumber())
+//        .gstId(ticket.getGstId())
+            .productPurchaseType(ticket.getProductPurchaseType())
+            .modeOfPayment(ticket.getModeOfPayment())
+            .acquisitionCost(ticket.getAcquisitionCost())
+            .refurbishedCost(ticket.getRefurbishedCost())
+            .customerAadharId(ticket.getCustomerAadharId())
+            .itemId(ticket.getItemId())
+            .brand(ticket.getBrand())
+            .userEmail(ticket.getUserEmail())
+            .itemSerialNo(ticket.getItemSerialNo())
+            .imeiNo(ticket.getImeiNo())
+            .batteryHealth(ticket.getBatteryHealth())
+            .warranty(ticket.getWarranty())
+            .boxFlag(ticket.getBoxFlag())
+            .chargerFlag(ticket.getChargerFlag())
+            .sealedFlag(ticket.getSealedFlag())
+            .invoiceFlag(ticket.getInvoiceFlag())
+            .ramRomSpecs(ticket.getRamRomSpecs())
+            .colorSpecs(ticket.getColorSpecs())
+            .comment(ticket.getComment())
+            .productName(ticket.getProductName())
+            .isDeleted(ticket.getIsDeleted())
+            .storeId(ticket.getStore() != null ? ticket.getStore().getId() : null)
+            .storeName(ticket.getStore() != null ? ticket.getStore().getName() : null)
+            .invoiceDto(ticket.getInvoice() != null
+            ? InvoiceMapper.toDto(ticket.getInvoice())
+            : null)
+            .build()
+    ).collect(Collectors.toList());
   }
 
   private Specification<Ticket> buildSpecification(
@@ -403,6 +447,7 @@ public class TicketServiceImpl implements TicketService {
     String toDateStr = allParams.remove("invoiceDateTo");
     String minCostStr = allParams.remove("costMin");
     String maxCostStr = allParams.remove("costMax");
+    String invoiceNumber = allParams.remove("invoiceNumber");
 
     return (root, cq, cb) -> {
       List<Predicate> preds = new ArrayList<>();
@@ -412,9 +457,11 @@ public class TicketServiceImpl implements TicketService {
           .get("id")
           .in(storeIds)
       );
+      Join<Object, Object> invoiceJoin = root.join("invoice", JoinType.LEFT);
 
       if (fromDateStr != null || toDateStr != null) {
-        Path<LocalDate> datePath = root.get("invoiceDate");
+        Path<LocalDate> datePath = invoiceJoin.get("invoiceDate");
+
         if (fromDateStr != null && toDateStr != null) {
           LocalDate from = LocalDate.parse(fromDateStr);
           LocalDate to = LocalDate.parse(toDateStr);
@@ -426,6 +473,11 @@ public class TicketServiceImpl implements TicketService {
           LocalDate to = LocalDate.parse(toDateStr);
           preds.add(cb.lessThanOrEqualTo(datePath, to));
         }
+      }
+
+
+      if (invoiceNumber != null && !invoiceNumber.isBlank()) {
+        preds.add(cb.like(cb.lower(invoiceJoin.get("invoiceNumber")), "%" + invoiceNumber.toLowerCase() + "%"));
       }
 
       if (minCostStr != null || maxCostStr != null) {
@@ -456,10 +508,7 @@ public class TicketServiceImpl implements TicketService {
 
         if (String.class.equals(javaType)) {
           if (CONTAINS_FIELDS.contains(key)) {
-            preds.add(cb.like(
-                cb.lower(root.get(key)),
-                "%" + value.toLowerCase() + "%"
-            ));
+            preds.add(cb.like(cb.lower(root.get(key)), "%" + value.toLowerCase() + "%"));
           } else {
             preds.add(cb.equal(root.get(key), value));
           }
@@ -473,10 +522,7 @@ public class TicketServiceImpl implements TicketService {
           LocalDate dateVal = LocalDate.parse(value);
           preds.add(cb.equal(root.get(key), dateVal));
         } else {
-          preds.add(cb.like(
-              root.get(key).as(String.class),
-              "%" + value + "%"
-          ));
+          preds.add(cb.like(root.get(key).as(String.class), "%" + value + "%"));
         }
       }
 
@@ -517,21 +563,112 @@ public class TicketServiceImpl implements TicketService {
 
   @Override
   @Transactional
-  public List<Ticket> checkoutForBuyCart(String userEmail, InvoiceDto invoiceDto) {
+  public InvoiceResponseDto checkoutForBuyCart(String userEmail, InvoiceDto invoiceDto) {
     Optional<User> user = userRepository.findByUserEmail(userEmail);
     if (user.isEmpty()) {
       throw new UsernameNotFoundException("No user found for user " + userEmail);
     }
     Cart cart = cartService.getOrCreateBuyCart(userEmail);
     List<Ticket> tickets = new ArrayList<>();
+    BigDecimal totalAcqCost = BigDecimal.ZERO;
     for (CartItem item : cart.getItems()) {
       for (CartItemDetail detail : item.getDetails()) {
         tickets.add(createTicketForNewPurchase(detail, item, invoiceDto, user.get()));
+        totalAcqCost = totalAcqCost.add(detail.getAcquisitionCost());
       }
     }
-    List<Ticket> saved = ticketRepository.saveAll(tickets);
     cartService.clearCart(cart);
-    return saved;
+    Invoice invoice = createInvoice(invoiceDto, tickets, totalAcqCost);
+    return mapToInvoiceResponseDto(invoice);
+  }
+
+  private InvoiceResponseDto mapToInvoiceResponseDto(Invoice invoice) {
+    return InvoiceResponseDto.builder()
+        .invoiceId(invoice.getId())
+        .invoiceNumber(invoice.getInvoiceNumber())
+        .invoiceDate(invoice.getInvoiceDate())
+        .totalAmount(invoice.getTotalAmount())
+        .gstNumber(invoice.getGstNumber())
+        .payments(invoice.getPayments().stream().map(p -> PaymentDto.builder()
+            .modeOfPayment(p.getModeOfPayment())
+            .amount(p.getAmount())
+            .transactionId(p.getTransactionId())
+            .paidAt(p.getPaidAt())
+            .build()).toList())
+        .products(invoice.getTickets().stream().map(t -> InvoiceProductDto.builder()
+            .ticketId(t.getTicketId())
+            .itemId(t.getItemId())
+            .productName(t.getProductName())
+            .brand(t.getBrand())
+            .ramRomSpecs(t.getRamRomSpecs())
+            .colorSpecs(t.getColorSpecs())
+            .acquisitionCost(t.getAcquisitionCost())
+            .refurbishedCost(t.getRefurbishedCost())
+            .imeiNo(t.getImeiNo())
+            .serialNo(t.getItemSerialNo())
+            .boxFlag(t.getBoxFlag())
+            .chargerFlag(t.getChargerFlag())
+            .sealedFlag(t.getSealedFlag())
+            .warranty(t.getWarranty())
+            .build()).toList())
+        .build();
+  }
+
+
+  @Transactional
+  public Invoice createInvoice(InvoiceDto dto, List<Ticket> tickets, BigDecimal totalAcqCost) {
+    UUID invoiceUUID = UUID.randomUUID();
+    List<Payment> payments = dto.payments().stream().map(paymentDto -> Payment.builder()
+        .modeOfPayment(paymentDto.getModeOfPayment())
+        .transactionId(paymentDto.getTransactionId())
+        .amount(paymentDto.getAmount())
+        .paidAt(paymentDto.getPaidAt() != null ? paymentDto.getPaidAt() : LocalDate.now())
+        .build()).toList();
+
+    BigDecimal totalPaid = payments.stream()
+        .map(Payment::getAmount)
+        .filter(Objects::nonNull)
+        .reduce(BigDecimal.ZERO, BigDecimal::add);
+
+    System.out.println("total :" + totalPaid + " " + totalAcqCost);
+    if (totalPaid.compareTo(totalAcqCost) < 0) {
+      throw new IllegalArgumentException("Please pay full cart amount " + totalAcqCost + " before proceeding.");
+    }
+
+    Invoice invoice = Invoice.builder()
+        .invoiceNumber(invoiceUUID.toString())
+        .invoiceDate(LocalDate.now())
+        .totalAmount(totalPaid)
+        .gstNumber(dto.gstNumber())
+        .gstId(dto.gstId())
+        .build();
+    payments.forEach(p -> p.setInvoice(invoice));
+    tickets.forEach(t -> t.setInvoice(invoice));
+    invoice.setPayments(payments);
+    invoice.setTickets(tickets);
+    return invoiceRepository.save(invoice);
+  }
+
+  @Transactional
+  public BigDecimal calculateCartCost(String userEmail, String cartType) {
+    Cart cart = cartRepository.findCartWithItems(userEmail, cartType)
+        .orElseThrow(() -> new EntityNotFoundException("Cart not found"));
+
+    return getTotalAcquisitionCost(cart);
+  }
+
+  private BigDecimal getTotalAcquisitionCost(Cart cart) {
+    System.out.println("Cart : " + cart.getItems());
+    if (cart == null || cart.getItems() == null) {
+      return BigDecimal.ZERO;
+    }
+
+    return cart.getItems().stream()
+        .filter(item -> item.getDetails() != null)
+        .flatMap(item -> item.getDetails().stream())
+        .map(CartItemDetail::getAcquisitionCost)
+        .filter(Objects::nonNull)
+        .reduce(BigDecimal.ZERO, BigDecimal::add);
   }
 
   @Override
@@ -588,7 +725,7 @@ public class TicketServiceImpl implements TicketService {
     if (cart.getSealedFlag().equalsIgnoreCase("Y")) {
       newStatus = TicketStatus.LISTED;
     } else {
-      newStatus = TicketStatus.QC1;
+      newStatus = TicketStatus.QC;
     }
     UUID invoiceUUID = UUID.randomUUID();
     String comments = null;
@@ -609,12 +746,10 @@ public class TicketServiceImpl implements TicketService {
         .userEmail(user.getUserEmail())
         .clientId(user.getClientId())
         .ticketStatus(newStatus)
-        .invoiceNumber(invoiceUUID.toString())
-        .invoiceDate(LocalDate.now())
         .phoneNumber(invoiceDto.phoneNumber())
         .customerName(invoiceDto.customerName())
-        .gstNumber(invoiceDto.gstNumber())
-        .gstId(invoiceDto.gstId())
+//        .gstNumber(invoiceDto.gstNumber())
+//        .gstId(invoiceDto.gstId())
         .productPurchaseType(invoiceDto.productPurchaseType())
         .modeOfPayment(invoiceDto.modeOfPayment())
         .customerAadharId(invoiceDto.customerAadharId())
