@@ -19,7 +19,6 @@ public record InvoiceResponseDto(
     String gstNumber,
     String gstId,
     String productPurchaseType,
-    PaymentMode modeOfPayment,
     Long customerAadharId,
     Long storeId,
     List<PaymentDto> payments,
@@ -38,7 +37,6 @@ public record InvoiceResponseDto(
         ", gstNumber='" + gstNumber + '\'' +
         ", gstId='" + gstId + '\'' +
         ", productPurchaseType='" + productPurchaseType + '\'' +
-        ", modeOfPayment='" + modeOfPayment + '\'' +
         ", customerAadharId=" + customerAadharId +
         '}';
   }

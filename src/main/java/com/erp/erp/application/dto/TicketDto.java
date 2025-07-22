@@ -68,7 +68,7 @@ public record TicketDto(
 //        .gstNumber(ticket.getGstNumber())
 //        .gstId(ticket.getGstId())
         .productPurchaseType(ticket.getProductPurchaseType())
-        .modeOfPayment(ticket.getModeOfPayment())
+//        .modeOfPayment(ticket.getModeOfPayment())
         .customerAadharId(ticket.getCustomerAadharId())
         .itemSerialNo(ticket.getItemSerialNo())
         .imeiNo(ticket.getImeiNo())

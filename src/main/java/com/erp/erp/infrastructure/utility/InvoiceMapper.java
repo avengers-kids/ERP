@@ -23,7 +23,6 @@ public class InvoiceMapper {
         .gstNumber(invoice.getGstNumber())
         .gstId(invoice.getGstId())
         .productPurchaseType(optionalTicket.map(Ticket::getProductPurchaseType).orElse(null))
-        .modeOfPayment(optionalTicket.map(Ticket::getModeOfPayment).orElse(null))
         .customerAadharId(optionalTicket.map(Ticket::getCustomerAadharId).orElse(null))
         .storeId(optionalTicket.map(ticket -> ticket.getStore().getId()).orElse(null))
         .payments(invoice.getPayments() != null

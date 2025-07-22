@@ -53,7 +53,7 @@ public class TicketResponseDto {
 //        .gstNumber(ticket.getGstNumber())
 //        .gstId(ticket.getGstId())
         .productPurchaseType(ticket.getProductPurchaseType())
-        .modeOfPayment(ticket.getModeOfPayment())
+//        .modeOfPayment(ticket.getModeOfPayment())
         .acquisitionCost(ticket.getAcquisitionCost())
         .refurbishedCost(ticket.getRefurbishedCost())
         .customerAadharId(ticket.getCustomerAadharId())

@@ -1,6 +1,5 @@
 package com.erp.erp.domain.model.ticket;
 
-import com.erp.erp.domain.enums.PaymentMode;
 import com.erp.erp.domain.enums.TicketStatus;
 import com.erp.erp.domain.model.client.Store;
 import com.erp.erp.domain.model.invoice.Invoice;
@@ -72,11 +71,6 @@ public class Ticket extends AbstractEntity {
 
   @Column(name = "PRODUCT_PURCHASE_TYPE", length = 50)
   private String productPurchaseType;
-
-  @Enumerated(EnumType.STRING)
-  @Column(name = "MODE_OF_PAYMENT", length = 20, nullable = false)
-  @NotNull
-  private PaymentMode modeOfPayment;
 
   @Column(name = "ACQUISITION_COST")
   private BigDecimal acquisitionCost;
