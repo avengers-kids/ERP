@@ -4,6 +4,7 @@ import com.erp.erp.application.dto.BillDto;
 import com.erp.erp.application.dto.InvoiceDto;
 import com.erp.erp.application.dto.TicketDto;
 import com.erp.erp.application.dto.TicketStatusCount;
+import com.erp.erp.application.dto.response.BillResponseDto;
 import com.erp.erp.application.dto.response.InvoiceResponseDto;
 import com.erp.erp.application.dto.response.TicketResponseDto;
 import com.erp.erp.domain.enums.TicketStatus;
@@ -33,13 +34,13 @@ public interface TicketService {
 
   List<TicketResponseDto> findInventoryTicketBySpecification(Map<String, String> allParams, String username);
 
-  BillDto checkBill(Long ticketId);
+//  BillDto checkBill(Long ticketId);
 
   TicketResponseDto checkTicket(Long ticketId);
 
   InvoiceResponseDto checkoutForBuyCart(String userEmail, InvoiceDto invoiceDto);
 
-  List<SoldStatus> checkoutSellCart(String userEmail, BillDto billDto);
+  BillResponseDto checkoutSellCart(String userEmail, BillDto billDto);
 
   List<TicketStatusCount> getTicketCountsByStatus(String username);
 

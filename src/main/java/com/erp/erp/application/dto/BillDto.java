@@ -1,7 +1,9 @@
 package com.erp.erp.application.dto;
 
+import com.erp.erp.domain.enums.PaymentMode;
 import java.math.BigDecimal;
 import java.time.LocalDate;
+import java.util.List;
 import lombok.Builder;
 
 /**
@@ -13,13 +15,13 @@ public record BillDto(
     String phoneNumber,
     String customerName,
     String gstId,
-    String modeOfPayment,
     String onlineTrxId,
     String placeOfSale,
     BigDecimal profit,
     String billNumber,
     LocalDate billDate,
-    String gstNumber
+    String gstNumber,
+    List<PaymentDto> payments
 
 ) {
 

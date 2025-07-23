@@ -128,16 +128,16 @@ public class TicketController {
     }
   }
 
-  @GetMapping("/check-bill/{id}")
-  @PreAuthorize("hasAnyRole('USER','ADMIN','MANAGER')")
-  public ResponseEntity<?> checkBill(@PathVariable Long id) {
-    try {
-      return ResponseEntity.ok(ticketService.checkBill(id));
-    }
-    catch (Exception ex) {
-      return ResponseEntity.internalServerError().body(ex.getMessage());
-    }
-  }
+//  @GetMapping("/check-bill/{id}")
+//  @PreAuthorize("hasAnyRole('USER','ADMIN','MANAGER')")
+//  public ResponseEntity<?> checkBill(@PathVariable Long id) {
+//    try {
+//      return ResponseEntity.ok(ticketService.checkBill(id));
+//    }
+//    catch (Exception ex) {
+//      return ResponseEntity.internalServerError().body(ex.getMessage());
+//    }
+//  }
 
   @GetMapping("/inventory-ticket")
   @PreAuthorize("hasAnyRole('USER','ADMIN','MANAGER')")
@@ -186,14 +186,24 @@ public class TicketController {
   /**
    * Delete a single cart item (and its details) by cartItemId
    */
-  @DeleteMapping("/cart/items/clear/{cartItemDetailId}")
+  @DeleteMapping("/cart/items/clear/{cartType}/{cartItemDetailId}")
   @PreAuthorize("hasAnyRole('USER','ADMIN','MANAGER')")
   public ResponseEntity<?> deleteItem(
       @AuthenticationPrincipal(expression = "username") String username,
+      @PathVariable String cartType,
       @PathVariable Long cartItemDetailId) {
     try {
-      cartService.deleteItem(username, cartItemDetailId);
-      return ResponseEntity.ok().build();
+      if (Objects.equals(cartType, "BUY")) {
+        cartService.deleteItemForBuyCart(username, cartItemDetailId);
+        return ResponseEntity.ok().build();
+      }
+      else if (Objects.equals(cartType, "SELL")) {
+        cartService.removeFromSellCart(username, cartItemDetailId);
+        return ResponseEntity.ok().build();
+      }
+      else {
+        return ResponseEntity.badRequest().body("Cart type can only be BUY or SELL");
+      }
     }
     catch (Exception ex) {
       return ResponseEntity.internalServerError().body(ex.getMessage());
@@ -237,11 +247,10 @@ public class TicketController {
 
   @PostMapping("/cart/items/sell/checkout")
   @PreAuthorize("hasAnyRole('USER','ADMIN','MANAGER')")
-  public ResponseEntity<String> sellCheckout(
+  public ResponseEntity<?> sellCheckout(
       @AuthenticationPrincipal(expression = "username") String username, @RequestBody BillDto billDto) {
     try {
-      ticketService.checkoutSellCart(username, billDto);
-      return ResponseEntity.ok().build();
+      return ResponseEntity.ok(ticketService.checkoutSellCart(username, billDto));
     }
     catch (Exception ex) {
       return ResponseEntity.internalServerError().body(ex.getMessage());

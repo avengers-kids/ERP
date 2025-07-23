@@ -13,6 +13,7 @@ import com.erp.erp.domain.model.ticket.TicketRepository;
 import jakarta.persistence.EntityNotFoundException;
 import jakarta.transaction.Transactional;
 import java.util.ArrayList;
+import java.util.Iterator;
 import java.util.List;
 import java.util.Optional;
 import java.util.Set;
@@ -236,7 +237,7 @@ public class CartService {
   }
 
   @Transactional
-  public void deleteItem(String userEmail, Long detailId) {
+  public void deleteItemForBuyCart(String userEmail, Long detailId) {
     CartItemDetail detail = cartItemDetailRepository.findById(detailId)
         .orElseThrow(() -> new EntityNotFoundException("Detail not found: " + detailId));
     CartItem item = detail.getCartItem();
@@ -251,4 +252,20 @@ public class CartService {
     }
     cartRepo.save(cart);
   }
+
+  @Transactional
+  public void removeFromSellCart(String userEmail, Long ticketId) {
+    Cart sellCart = getOrCreateSellCart(userEmail);
+
+    Iterator<CartItem> iterator = sellCart.getItems().iterator();
+    while (iterator.hasNext()) {
+      CartItem item = iterator.next();
+      if (item.getItemId().equals(ticketId)) {
+        iterator.remove();
+        break;
+      }
+    }
+  }
+
+
 }

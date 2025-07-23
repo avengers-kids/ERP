@@ -1,15 +1,23 @@
 package com.erp.erp.domain.model.ticket;
 
+import com.erp.erp.domain.enums.PaymentMode;
+import com.erp.erp.domain.model.payment.Payment;
 import com.erp.erp.domain.model.shared.AbstractEntity;
+import jakarta.persistence.CascadeType;
 import jakarta.persistence.Column;
 import jakarta.persistence.Entity;
+import jakarta.persistence.EnumType;
+import jakarta.persistence.Enumerated;
 import jakarta.persistence.GeneratedValue;
 import jakarta.persistence.GenerationType;
 import jakarta.persistence.Id;
+import jakarta.persistence.OneToMany;
 import jakarta.persistence.Table;
 import jakarta.persistence.TableGenerator;
 import java.math.BigDecimal;
 import java.time.LocalDate;
+import java.util.ArrayList;
+import java.util.List;
 import lombok.AccessLevel;
 import lombok.AllArgsConstructor;
 import lombok.Builder;
@@ -43,9 +51,6 @@ public class SoldStatus extends AbstractEntity {
     @Column(name = "SOLD_TABLE_ID", nullable = false)
     private Long soldTableId;
 
-    @Column(name = "TICKET_ID", nullable = false)
-    private Long ticketId;
-
     @Column(name = "CLIENT_ID", nullable = false)
     private Long clientId;
 
@@ -60,9 +65,6 @@ public class SoldStatus extends AbstractEntity {
 
     @Column(name = "GST_ID")
     private String gstId;
-
-    @Column(name = "MODE_OF_PAYMENT", nullable = false)
-    private String modeOfPayment;
 
     @Column(name = "ONLINE_TRX_ID")
     private String onlineTrxId;
@@ -81,5 +83,11 @@ public class SoldStatus extends AbstractEntity {
 
     @Column(name = "IS_DELTED", nullable = false, length = 1)
     private String isDeleted;
+
+    @OneToMany(mappedBy = "bill", cascade = CascadeType.ALL, orphanRemoval = true)
+    private List<Payment> payments = new ArrayList<>();
+
+    @OneToMany(mappedBy = "bill", cascade = CascadeType.ALL)
+    private List<Ticket> tickets = new ArrayList<>();
 
 }

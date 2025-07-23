@@ -2,10 +2,12 @@ package com.erp.erp.domain.model.payment;
 
 import com.erp.erp.domain.enums.PaymentMode;
 import com.erp.erp.domain.model.invoice.Invoice;
+import com.erp.erp.domain.model.ticket.SoldStatus;
 import jakarta.persistence.Column;
 import jakarta.persistence.Entity;
 import jakarta.persistence.EnumType;
 import jakarta.persistence.Enumerated;
+import jakarta.persistence.FetchType;
 import jakarta.persistence.GeneratedValue;
 import jakarta.persistence.GenerationType;
 import jakarta.persistence.Id;
@@ -54,9 +56,13 @@ public class Payment {
   @Column(name = "amount", precision = 10, scale = 2, nullable = false)
   private BigDecimal amount;
 
-  @ManyToOne
+  @ManyToOne(fetch = FetchType.LAZY)
   @JoinColumn(name = "INVOICE_ID")
   private Invoice invoice;
+
+  @ManyToOne(fetch = FetchType.LAZY)
+  @JoinColumn(name = "SOLD_TABLE_ID")
+  private SoldStatus bill;
 
   @Column(name = "paid_at", nullable = false)
   private LocalDate paidAt = LocalDate.now();

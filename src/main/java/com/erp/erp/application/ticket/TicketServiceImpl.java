@@ -6,6 +6,7 @@ import com.erp.erp.application.dto.InvoiceProductDto;
 import com.erp.erp.application.dto.PaymentDto;
 import com.erp.erp.application.dto.TicketDto;
 import com.erp.erp.application.dto.TicketStatusCount;
+import com.erp.erp.application.dto.response.BillResponseDto;
 import com.erp.erp.application.dto.response.InvoiceResponseDto;
 import com.erp.erp.application.dto.response.TicketResponseDto;
 import com.erp.erp.application.item.CartService;
@@ -26,6 +27,7 @@ import com.erp.erp.domain.model.ticket.TicketLifecycle;
 import com.erp.erp.domain.model.ticket.TicketRepository;
 import com.erp.erp.domain.model.user.User;
 import com.erp.erp.domain.model.user.UserRepository;
+import com.erp.erp.infrastructure.utility.BillMapper;
 import com.erp.erp.infrastructure.utility.DateTimeFormatterUtil;
 import com.erp.erp.infrastructure.utility.InvoiceMapper;
 import jakarta.persistence.EntityNotFoundException;
@@ -458,26 +460,26 @@ public class TicketServiceImpl implements TicketService {
   }
 
 
-  @Override
-  public BillDto checkBill(Long ticketId) {
-    Optional<SoldStatus> bill = soldStatusRepository.findByTicketId(ticketId);
-    if (bill.isEmpty()) {
-      throw new IllegalArgumentException("No Bill found.");
-    }
-    return BillDto.builder()
-        .clientId(bill.get().getClientId())
-        .customerName(bill.get().getCustomerName())
-        .phoneNumber(bill.get().getPhoneNumber())
-        .modeOfPayment(bill.get().getModeOfPayment())
-        .gstId(bill.get().getGstId())
-        .modeOfPayment(bill.get().getModeOfPayment())
-        .onlineTrxId(bill.get().getOnlineTrxId())
-        .placeOfSale(bill.get().getPlaceOfSale())
-        .billNumber(bill.get().getBillNumber())
-        .billDate(bill.get().getBillDate())
-        .profit(bill.get().getProfit())
-        .build();
-  }
+//  @Override
+//  public BillDto checkBill(Long ticketId) {
+//    Optional<SoldStatus> bill = soldStatusRepository.findByTicketId(ticketId);
+//    if (bill.isEmpty()) {
+//      throw new IllegalArgumentException("No Bill found.");
+//    }
+//    return BillDto.builder()
+//        .clientId(bill.get().getClientId())
+//        .customerName(bill.get().getCustomerName())
+//        .phoneNumber(bill.get().getPhoneNumber())
+//        .modeOfPayment(bill.get().getModeOfPayment())
+//        .gstId(bill.get().getGstId())
+//        .modeOfPayment(bill.get().getModeOfPayment())
+//        .onlineTrxId(bill.get().getOnlineTrxId())
+//        .placeOfSale(bill.get().getPlaceOfSale())
+//        .billNumber(bill.get().getBillNumber())
+//        .billDate(bill.get().getBillDate())
+//        .profit(bill.get().getProfit())
+//        .build();
+//  }
 
   @Override
   public TicketResponseDto checkTicket(Long ticketId) {
@@ -600,7 +602,7 @@ public class TicketServiceImpl implements TicketService {
 
   @Override
   @Transactional
-  public List<SoldStatus> checkoutSellCart(String userEmail, BillDto billDto) {
+  public BillResponseDto checkoutSellCart(String userEmail, BillDto billDto) {
     Optional<User> user = userRepository.findByUserEmail(userEmail);
     if (user.isEmpty()) {
       throw new UsernameNotFoundException("No user found for user " + userEmail);
@@ -612,7 +614,6 @@ public class TicketServiceImpl implements TicketService {
         .collect(Collectors.toList());
 
     List<Ticket> tickets = ticketRepository.findAllById(ticketIds);
-    List<SoldStatus> soldStatusList = new ArrayList<>();
     for (Ticket ticket : tickets) {
       if (ticket.getTicketStatus() == TicketStatus.SOLD) {
         throw new IllegalArgumentException("Product already sold : " + ticket.getTicketId());
@@ -622,28 +623,35 @@ public class TicketServiceImpl implements TicketService {
         throw new IllegalArgumentException("This ticket is deleted : " + ticket.getTicketId());
       } else {
         ticket.setTicketStatus(TicketStatus.SOLD);
-        SoldStatus soldStatus = SoldStatus.builder()
-            .ticketId(ticket.getTicketId())
-            .clientId(ticket.getClientId())
-            .phoneNumber(billDto.phoneNumber())
-            .customerName(billDto.customerName())
-            .phoneNumber(billDto.phoneNumber())
-            .gstId(billDto.gstId())
-            .onlineTrxId(billDto.onlineTrxId())
-            .modeOfPayment(billDto.modeOfPayment())
-            .placeOfSale(billDto.placeOfSale())
-            .profit(billDto.profit())
-            .billNumber(UUID.randomUUID().toString())
-            .billDate(LocalDate.now())
-            .gstNumber(billDto.gstNumber())
-            .isDeleted("N")
-            .build();
-        soldStatusRepository.save(soldStatus);
       }
     }
+    SoldStatus soldStatus = SoldStatus.builder()
+        .clientId(user.get().getClientId())
+        .phoneNumber(billDto.phoneNumber())
+        .customerName(billDto.customerName())
+        .gstId(billDto.gstId())
+        .onlineTrxId(billDto.onlineTrxId())
+        .placeOfSale(billDto.placeOfSale())
+        .profit(billDto.profit())
+        .billNumber(UUID.randomUUID().toString())
+        .billDate(LocalDate.now())
+        .gstNumber(billDto.gstNumber())
+        .isDeleted("N")
+        .build();
+    List<Payment> payments = billDto.payments().stream().map(paymentDto -> Payment.builder()
+        .modeOfPayment(paymentDto.getModeOfPayment())
+        .transactionId(paymentDto.getTransactionId())
+        .amount(paymentDto.getAmount())
+        .paidAt(paymentDto.getPaidAt() != null ? paymentDto.getPaidAt() : LocalDate.now())
+        .bill(soldStatus)
+        .build()).toList();
+    tickets.forEach(t -> t.setBill(soldStatus));
+    soldStatus.setPayments(payments);
+    soldStatus.setTickets(tickets);
+    soldStatusRepository.save(soldStatus);
     ticketRepository.saveAll(tickets);
     cartService.clearCart(sellCart);
-    return soldStatusList;
+    return BillMapper.toDto(soldStatus);
   }
 
 
@@ -654,7 +662,6 @@ public class TicketServiceImpl implements TicketService {
     } else {
       newStatus = TicketStatus.QC;
     }
-    UUID invoiceUUID = UUID.randomUUID();
     String comments = null;
     if (cart.getComment() != null) {
       comments =

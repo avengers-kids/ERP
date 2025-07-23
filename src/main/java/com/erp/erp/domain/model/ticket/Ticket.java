@@ -149,6 +149,11 @@ public class Ticket extends AbstractEntity {
   @NotNull
   private Store store;
 
+  @ManyToOne(fetch = FetchType.LAZY)
+  @JoinColumn(name = "SOLD_TABLE_ID")
+  private SoldStatus bill;
+
+
 //  public BigDecimal totalPaid() {
 //    return payments.stream()
 //        .map(Payment::getAmount)
