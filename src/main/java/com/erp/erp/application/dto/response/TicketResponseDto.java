@@ -40,6 +40,7 @@ public class TicketResponseDto {
   private Long storeId;
   private String storeName;
   private InvoiceResponseDto invoiceDto;
+  private BillResponseDto billResponseDto;
 
   public TicketResponseDto mapToDto(Ticket ticket) {
     return TicketResponseDto.builder()

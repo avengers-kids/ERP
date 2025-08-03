@@ -248,6 +248,9 @@ public class TicketServiceImpl implements TicketService {
         .invoiceDto(ticket.getInvoice() != null
             ? InvoiceMapper.toDto(ticket.getInvoice())
             : null)
+        .billResponseDto(ticket.getBill() != null
+            ? BillMapper.toDto(ticket.getBill())
+            : null)
         .build();
   }
 
@@ -645,6 +648,7 @@ public class TicketServiceImpl implements TicketService {
         .paidAt(paymentDto.getPaidAt() != null ? paymentDto.getPaidAt() : LocalDate.now())
         .bill(soldStatus)
         .build()).toList();
+    payments.forEach(p -> p.setBill(soldStatus));
     tickets.forEach(t -> t.setBill(soldStatus));
     soldStatus.setPayments(payments);
     soldStatus.setTickets(tickets);
